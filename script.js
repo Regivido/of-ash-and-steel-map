@@ -3,7 +3,7 @@
 // ============================================
 
 // Константы для карты
-const IMAGE_BOUNDS = [[0, 0], [4096, 4096]];
+const IMAGE_BOUNDS = [[0, 0], [800, 800]];
 const IMAGE_URL = 'assets/greyshaft-city.png';
 
 // Глобальные переменные
