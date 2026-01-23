@@ -1,0 +1,57 @@
+<html>
+<head>
+    <title>Debug Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #debugMap { width: 800px; height: 600px; border: 2px solid red; }
+    </style>
+</head>
+<body>
+    <h2>Тест загрузки карты</h2>
+    <div id="debugMap"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('debugMap', {
+            crs: L.CRS.Simple,
+            maxBounds: [[0, 0], [800, 800]],
+        });
+        
+        // Пробуем разные форматы
+        const testImages = [
+            {name: 'WebP', url: 'assets/worldmap.webp'},
+            {name: 'PNG', url: 'assets/worldmap.png'},
+            {name: 'Тестовая карта', url: 'https://via.placeholder.com/800x800/4CAF50/FFFFFF?text=Test+Map'}
+        ];
+        
+        let currentIndex = 0;
+        
+        function testNextImage() {
+            if (currentIndex >= testImages.length) return;
+            
+            const test = testImages[currentIndex];
+            console.log(`Тестируем: ${test.name} (${test.url})`);
+            
+            const img = new Image();
+            img.onload = () => {
+                console.log(`✅ ${test.name} загружен`);
+                document.body.innerHTML += `<p style="color:green">✅ ${test.name}: ${test.url}</p>`;
+                
+                // Показываем на карте
+                L.imageOverlay(test.url, [[0, 0], [800, 800]]).addTo(map);
+                map.setView([400, 400], 0);
+            };
+            img.onerror = () => {
+                console.log(`❌ ${test.name} не загружен`);
+                document.body.innerHTML += `<p style="color:red">❌ ${test.name}: ${test.url}</p>`;
+            };
+            img.src = test.url;
+            
+            currentIndex++;
+            setTimeout(testNextImage, 2000);
+        }
+        
+        testNextImage();
+    </script>
+</body>
+</html>
