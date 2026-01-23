@@ -160,6 +160,24 @@ function initMap() {
     setupEventListeners();
 }
 
+function checkMapImage() {
+    console.log('Проверка загрузки карты...');
+    
+    // Проверяем разные форматы
+    const formats = [
+        'assets/worldmap.webp',
+        'assets/worldmap.png',
+        'assets/worldmap.jpg'
+    ];
+    
+    formats.forEach(url => {
+        const img = new Image();
+        img.onload = () => console.log(`✅ ${url} - доступен`);
+        img.onerror = () => console.log(`❌ ${url} - не доступен`);
+        img.src = url;
+    });
+}
+
 /**
  * Инициализация иконок маркеров
  */
@@ -3427,6 +3445,9 @@ function enableSpecialMarksScroll() {
  */
 function initializeApp() {
     console.log('Инициализация приложения...');
+    
+    // Проверяем карту
+    checkMapImage();
     
     // Загрузка сохраненных состояний
     loadFilterStates();
