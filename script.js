@@ -4,7 +4,7 @@
 
 // Константы для карты
 const IMAGE_BOUNDS = [[0, 0], [800, 800]];
-const IMAGE_URL = 'assets/greyshaft-city.png';
+const IMAGE_URL = 'assets/altar.png';
 
 // Глобальные переменные
 let map;
