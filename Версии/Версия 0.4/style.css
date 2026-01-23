@@ -1,0 +1,679 @@
+#map { 
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    }
+
+.leaflet-control-zoom {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(30, 33, 40, 0.9);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+    background: rgba(255, 255, 255, 0.1);
+    color: #d0d0d0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaflet-control-zoom a:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.leaflet-control-zoom a:first-child {
+    border-radius: 6px 6px 0 0;
+}
+
+.leaflet-control-zoom a:last-child {
+    border-bottom: none;
+    border-radius: 0 0 6px 6px;
+}
+
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.leaflet-control-zoom a.leaflet-disabled {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(208, 208, 208, 0.5) !important;
+}
+
+/* Вертикальный контейнер для переключателей (правый верхний)*/
+.toggles-container {
+    position: absolute;
+    top: 0;
+    right: 40px;
+    background: rgba(30, 33, 40, 0.5);
+    backdrop-filter: blur(2px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    border-radius: 10px;
+    padding: 12px 15px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    transition: all 0.3s ease;
+}
+
+.toggles-container:hover {
+    background: rgba(35, 38, 45, 0.95);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Группа для каждого переключателя */
+.toggle-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Выравниваем по краям */
+    padding: 6px 0;
+    gap: 10px;
+    width: 100%; /* Занимаем всю ширину контейнера */  
+}
+
+/* Стили для переключателя координат */
+.coords-toggle-control, .hidden-toggle-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
+    }
+        
+.coords-toggle-control:hover, .hidden-toggle-control:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    }
+        
+.coords-toggle-control.active, .hidden-toggle-control.active {
+    background: rgba(93, 243, 33, 0.2);
+    border-color: #5df321;
+    }
+        
+.checkmark, .hidden-checkmark {
+    width: 20px;
+    height: 20px;
+    position: relative;
+    display: none;
+}
+        
+    .checkmark.active, .hidden-checkmark.active {
+        display: inline;
+    }
+        
+    .checkmark:before, .hidden-checkmark:before {
+        content: "✓";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        font-size: 13px;
+        font-weight: bold;
+        color: #5df321;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+        
+    /* Стиль для отображения координат */
+    .coords-display {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(0);
+        background: rgba(30, 33, 40, 0.9);
+        backdrop-filter: blur(10px) saturate(180%);
+        -webkit-backdrop-filter: blur(10px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #e0e0e0;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 13px;
+        box-shadow: 
+            0 4px 20px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+        border-radius: 8px;
+        padding: 10px 12px;
+        min-width: 150px;
+        z-index: 1000;
+        text-align: center;
+        transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s ease;
+    }
+
+    .coords-display.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(10px);
+}
+    /* Подписи для переключателей */
+.coords-label, .hidden-label {
+    font-family: Arial, sans-serif;
+    color: #d0d0d0;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+    margin-left: 0;
+}
+
+/* Вертикальный контейнер для фильтров (левый верхний) */
+.filters-container {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    background: rgba(30, 33, 40, 0.5);
+    backdrop-filter: blur(2px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    border-radius: 10px;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    min-width: 220px;
+    overflow: hidden; /* Изменено с scroll на hidden */
+}
+
+.filters-container:hover {
+    background: rgba(35, 38, 45, 0.95);
+    border-color: rgba(255, 255, 255, 0.18);
+}    
+
+/* Обертка для содержимого с прокруткой */
+.filters-content {
+    background: transparent;
+    overflow-y: auto;
+    max-height: 80vh;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+/* Когда свернуто */
+.filters-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+/* Убираем скроллбар когда контейнер свернут */
+.filters-content:not(.collapsed)::-webkit-scrollbar {
+    width: 6px;
+}
+
+.filters-content:not(.collapsed)::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
+}
+
+.filters-content:not(.collapsed)::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+
+.filters-content:not(.collapsed)::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
+}
+
+.filters-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.filters-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.filters-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.filters-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Заголовок фильтров - фиксированный */
+.filters-title {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    text-align: center;
+    padding: 8px 12px;
+    z-index: 2;
+    color: #e0e0e0;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    border-radius: 6px 6px 0 0;
+}
+
+.filters-title:hover {
+    background: rgba(45, 49, 58, 0.95);
+}
+
+.filters-title-text {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Иконка стрелки */
+.filters-arrow {
+    font-size: 8px;
+    color: #a0a0a0;
+    padding-top: 2px;
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+  
+/* Панель с фильтрами внутри контейнера */
+.filters-panel {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 12px 10px 12px;
+}
+
+/* Стили для фильтров */
+.filter-group {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 4px 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-right: 2px; 
+}
+
+.subfilters-container {
+    width: 100%; 
+    margin: 8px 0 0 0;
+    padding: 10px 12px 10px 35px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+}
+
+/* Убираем нижнюю границу у последнего фильтра в группе */
+.filter-group:last-child {
+    border-bottom: none;
+}
+.filter-icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 4px;
+}
+
+.filter-label {
+    font-family: Arial, sans-serif;
+    color: #d0d0d0;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.filter-label-container {
+    display: flex;
+    align-items: center;
+    gap: 10zpx;
+    flex: 1;
+}
+
+.filter-checkbox {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
+}
+
+.filter-checkbox:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.filter-checkbox.active {
+    background: rgba(33, 150, 243, 0.2);
+    border-color: #2196F3;
+}
+
+.filter-checkmark {
+    width: 18px;
+    height: 18px;
+    position: relative;
+    display: none;
+}
+
+.filter-checkmark.active {
+    display: inline;
+}
+
+.filter-checkmark:before {
+    content: "✓";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 13px;
+    font-weight: bold;
+    color: #2196F3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.filter-group:last-child {
+    border-bottom: none;
+}
+
+/* Особый стиль для "Все фильтры" */
+.filter-group:first-child .filter-label {
+    color: #4da6ff;
+    font-weight: 600;
+}
+
+.filter-group:first-child .filter-checkbox.active {
+    border-color: #2196F3;
+    background-color: rgba(33, 150, 243, 0.1);
+}
+
+.filter-group:first-child .filter-checkmark:before {
+    color: #2196F3;
+}
+
+/* Разделитель после "Все фильтры" */
+.filter-group:first-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+/* Стили для чекбокса с состоянием "частично включено" */
+.filter-checkbox.partial {
+    background: rgba(33, 150, 243, 0.2) !important;
+    border-color: #2196F3 !important;
+    position: relative;
+}
+
+.filter-checkbox.partial::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background-color: #2196F3;
+    border-radius: 2px;
+}
+
+/* Для подфильтров тоже */
+.subfilter-checkbox.partial {
+    background: rgba(76, 175, 80, 0.2) !important;
+    border-color: #4CAF50 !important;
+    position: relative;
+}
+
+.subfilter-checkbox.partial::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background-color: #4CAF50;
+    border-radius: 1px;
+}
+
+/* Убираем галочку при частичном состоянии */
+.filter-checkbox.partial .filter-checkmark,
+.subfilter-checkbox.partial .subfilter-checkmark {
+    display: none !important;
+}
+
+/* Стили для подфильтров */
+.subfilters-container {
+    width: 100%;
+    margin: 2px 0 0 12px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+}
+
+.subfilter-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    width: 100%;
+}
+
+.subfilter-group:last-child {
+    border-bottom: none;
+}
+
+.subfilter-label-container {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.subfilter-label-container {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.subfilter-label {
+    font-family: Arial, sans-serif;
+    color: rgba(208, 208, 208, 0.9);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+    padding-left: 0; /* Убираем лишний отступ */
+}
+
+.subfilter-checkbox {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.subfilter-checkbox:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.subfilter-checkbox.active {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: #4CAF50;
+}
+
+.subfilter-checkmark {
+    width: 16px;
+    height: 16px;
+    position: relative;
+    display: none;
+}
+
+.subfilter-checkmark.active {
+    display: inline;
+}
+
+.subfilter-checkmark:before {
+    content: "✓";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 11px;
+    font-weight: bold;
+    color: #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Стрелка для фильтров с подфильтрами */
+.filter-arrow {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    margin-left: 8px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+/* Убираем нижнюю границу у последнего фильтра в группе */
+.filter-group:last-child {
+    border-bottom: none;
+}
+
+.filter-clickable-area {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    cursor: pointer;
+}
+
+/* Для фильтров без подфильтров */
+.filter-group:not(.has-subfilters) .filter-clickable-area {
+    cursor: default;
+}
+
+/* Стили для POPUP при наведении */
+.hover-popup {
+    pointer-events: none;
+    z-index: 999 !important;
+}
+
+.leaflet-popup.hover-popup .leaflet-popup-content-wrapper {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 200px;
+}
+
+.leaflet-popup.hover-popup .leaflet-popup-content {
+    margin: 0;
+    padding: 0;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.leaflet-popup.hover-popup .leaflet-popup-tip {
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    backdrop-filter: blur(4px);
+}
+
+/* Уменьшаем стрелку у попапа */
+.hover-popup .leaflet-popup-tip-container {
+    margin-top: -1px;
+}
+/* Стили для тултипов при клике */
+.clicked-tooltip {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    font-size: 16px;
+    padding: 0;
+    color: #333;
+}
+
+.clicked-tooltip:before,
+.clicked-tooltip:after {
+    display: none;
+}
+
+/* Активный маркер */
+.leaflet-marker-icon.tooltip-active {
+    filter: drop-shadow(0 0 6px black) brightness(1.3);
+    z-index: 1000;
+    transform: scale(1.1);
+}
+
+/* Tooltip должен быть поверх popup */
+.clicked-tooltip {
+    z-index: 1001;
+}
+
+/* Маркеры */
+.leaflet-marker-icon {
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.leaflet-marker-icon:hover {
+    filter: brightness(1.2) drop-shadow(0 0 4px black);
+    transform: scale(1.05);
+}
+
+.leaflet-div-icon {
+    background: transparent;
+    border: none;
+}
