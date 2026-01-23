@@ -3,7 +3,7 @@
     <title>Debug Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        #debugMap { width: 800px; height: 600px; border: 2px solid red; }
+        #debugMap { width: 800px; height: 800px; border: 2px solid red; }
     </style>
 </head>
 <body>
@@ -14,7 +14,7 @@
     <script>
         const map = L.map('debugMap', {
             crs: L.CRS.Simple,
-            maxBounds: [[0, 0], [800, 800]],
+            maxBounds: [[0, 0], [4096, 4096]],
         });
         
         // Пробуем разные форматы
