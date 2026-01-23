@@ -4,7 +4,7 @@
 
 // Константы для карты
 const IMAGE_BOUNDS = [[0, 0], [4096, 4096]];
-const IMAGE_URL = 'assets/worldmap.webp';
+const IMAGE_URL = 'assets/greyshaft-city.png';
 
 // Глобальные переменные
 let map;
