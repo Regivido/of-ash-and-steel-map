@@ -4,7 +4,7 @@
 
 // Константы для карты
 const IMAGE_BOUNDS = [[0, 0], [800, 800]];
-const IMAGE_URL = 'assets/worldmap.webp';
+const IMAGE_URL = 'assets/worldmap.png';
 
 // Глобальные переменные
 let map;
@@ -490,7 +490,7 @@ function loadUserMarkers() {
             });
             
             markersData.forEach(data => {
-                // Создаем объект данных маркера в том же формате, что и из CSV
+                // Создаем объект данных маркера в том же формате
                 const markerData = {
                     Название: data.name,
                     ОсновныеФильтры: data.filters || ['Мои метки'],
@@ -3428,11 +3428,6 @@ function enableSpecialMarksScroll() {
 function initializeApp() {
     console.log('Инициализация приложения...');
     
-    // Загрузка сохраненных состояний
-    loadFilterStates();
-    loadSpecialMarksStates();
-    loadToolsStates();
-    
     // Инициализация карты
     initMap();
     
@@ -3446,11 +3441,11 @@ function initializeApp() {
     const specialMarksControl = new SpecialMarksControl();
     specialMarksControl.addTo(map);
     
-    // Загрузка меток - сначала CSV
+    // Загрузка меток
     setTimeout(() => {
         loadMarkersFromJSON();
         loadMarkedMarkers();
-        // Загружаем пользовательские метки после CSV
+        // Загружаем пользовательские метки
         setTimeout(() => {
             loadUserMarkers();
             cleanupGhostMarkedMarkers();
