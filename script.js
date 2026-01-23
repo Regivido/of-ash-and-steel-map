@@ -4,7 +4,7 @@
 
 // Константы для карты
 const IMAGE_BOUNDS = [[0, 0], [800, 800]];
-const IMAGE_URL = 'assets/worldmap.png';
+const IMAGE_URL = 'assets/worldmap.webp';
 
 // Глобальные переменные
 let map;
