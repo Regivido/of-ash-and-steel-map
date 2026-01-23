@@ -140,12 +140,15 @@ function initMap() {
         doubleClickZoom: false,
     });
     
-    // Добавляем изображение карты
-    L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
-    
     // Настраиваем контролы
     map.removeControl(map.zoomControl);
     L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Добавляем изображение карты
+    const imageLayer = L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS, {
+        alt: 'Карта мира',
+        interactive: false
+    }).addTo(map);
     
     // Инициализация иконок
     initMarkerIcons();
