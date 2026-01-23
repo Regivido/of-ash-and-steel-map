@@ -3500,10 +3500,10 @@ function initializeApp() {
                     specialMarksConfig.forEach(mark => {
                         updateSpecialMarkCheckboxState(mark.name);
                     });
-                }, 100);
-            }, 300);
-        }, 200);
-    }, 100);
+                }, 900);
+            }, 1100);
+        }, 1000);
+    }, 900);
 }
 
 // ============================================
