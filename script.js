@@ -150,17 +150,16 @@ function initMap() {
         interactive: false
     }).addTo(map);
     
+    setTimeout(() => {
     // Инициализация иконок
     initMarkerIcons();
-    
     // Инициализация состояний
     initAllStates();
-    
     // Загружаем сохраненное состояние карты
     loadMapState();
-    
     // Настраиваем обработчики событий
     setupEventListeners();
+    }, 500);
 }
 
 function checkMapImage() {
