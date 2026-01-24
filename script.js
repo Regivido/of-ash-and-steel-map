@@ -145,21 +145,20 @@ function initMap() {
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     // Добавляем изображение карты
-    const imageLayer = L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS, {
-        alt: 'Карта мира',
-        interactive: false
-    }).addTo(map);
+    L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
+    map.setView([400, 400], 1);
     
-    setTimeout(() => {
     // Инициализация иконок
     initMarkerIcons();
+    
     // Инициализация состояний
     initAllStates();
+    
     // Загружаем сохраненное состояние карты
     loadMapState();
+    
     // Настраиваем обработчики событий
     setupEventListeners();
-    }, 500);
 }
 
 function checkMapImage() {
@@ -3500,10 +3499,10 @@ function initializeApp() {
                     specialMarksConfig.forEach(mark => {
                         updateSpecialMarkCheckboxState(mark.name);
                     });
-                }, 900);
-            }, 1100);
-        }, 1000);
-    }, 900);
+                }, 100);
+            }, 300);
+        }, 200);
+    }, 100);
 }
 
 // ============================================
