@@ -1226,12 +1226,40 @@ transform: translateX(-50%) translateY(10px);
 }
 
 .tool-button {
+    width: 85%;
+    padding: 8px 12px;
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 4px;
+    color: #4CAF50;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: all 0.2s ease;
     user-select: none;
     font-family: Arial, sans-serif;
 }
 
+.tool-button:hover {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4CAF50;
+}
+
 .tool-button:active {
     transform: scale(0.98);
+}
+
+.tool-button.export-json {
+    background: rgba(33, 150, 243, 0.1);
+    border-color: rgba(33, 150, 243, 0.3);
+    color: #2196F3;
+}
+
+.tool-button.export-json:hover {
+    background: rgba(33, 150, 243, 0.2);
+    border-color: #2196F3;
 }
 
 /* Стиль для курсора в режиме создания меток */
@@ -1251,4 +1279,232 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
 
 .leaflet-marker-icon.is-user-marker:hover {
     filter: drop-shadow(0 0 5px rgba(0, 150, 255, 0.8)) brightness(1.2);
+}
+
+/* Стили для чипсов фильтров */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 16px;
+    padding: 4px 10px 4px 12px;
+    font-size: 12px;
+    color: #4CAF50;
+    cursor: default;
+    transition: all 0.2s ease;
+    user-select: none;
+    margin: 2px;
+}
+
+.filter-chip:hover {
+    background: rgba(76, 175, 80, 0.25);
+    border-color: #4CAF50;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.remove-filter-chip {
+    cursor: pointer;
+    font-size: 14px;
+    color: rgba(255, 87, 87, 0.7);
+    margin-left: 4px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.remove-filter-chip:hover {
+    color: #ff5757;
+    background: rgba(255, 87, 87, 0.1);
+    transform: scale(1.1);
+}
+
+/* Стили для пустого состояния */
+#filter-chips-container:empty::before {
+    content: 'Нет выбранных фильтров';
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    font-style: italic;
+    padding: 8px;
+    text-align: center;
+    width: 100%;
+}
+
+/* Стили для автодополнения с группировкой */
+#filters-autocomplete div[style*="background: rgba(0, 0, 0, 0.2)"] {
+    cursor: default;
+}
+
+#filters-autocomplete div[style*="background: rgba(0, 0, 0, 0.2)"]:hover {
+    background: rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Стили для дерева фильтров */
+#filters-tree {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
+}
+
+#filters-tree::-webkit-scrollbar {
+    width: 6px;
+}
+
+#filters-tree::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+#filters-tree::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+#filters-tree::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Стили для элементов дерева */
+.filter-tree-item {
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.filter-tree-item:hover {
+    transform: translateX(2px);
+}
+
+.filter-tree-item[data-is-subfilter="true"] {
+    border-left: 2px solid rgba(76, 175, 80, 0.3);
+}
+
+.filter-tree-item[data-is-subfilter="true"]:hover {
+    border-left-color: rgba(76, 175, 80, 0.6);
+}
+
+/* Подсветка выбранных фильтров в дереве */
+.filter-tree-item.selected {
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.1), transparent);
+    border-left: 3px solid #4CAF50;
+}
+
+/* Анимация добавления фильтра */
+@keyframes filterAdded {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.filter-tree-item.selected {
+    animation: filterAdded 0.3s ease;
+}
+
+/* Стили для чипсов в диалоге создания метки */
+#filter-chips-container {
+    min-height: 44px;
+    transition: min-height 0.3s ease;
+}
+
+#filter-chips-container:empty::before {
+    content: 'Нет выбранных фильтров';
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+/* Стили для поиска */
+#search-results {
+    max-height: 300px;
+    border-radius: 8px;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+#search-results div[style*="background: rgba(0, 0, 0, 0.3)"] {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .create-marker-dialog {
+        flex-direction: column;
+        width: 95% !important;
+        max-height: 85vh !important;
+    }
+    
+    .create-marker-dialog > div {
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-right: 0 !important;
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+    }
+}
+
+/* ===== КНОПКА ПЕРЕКЛЮЧЕНИЯ КАРТЫ (правый нижний угол) ===== */
+
+/* Стиль для кнопки переключения */
+.map-switch-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(30, 33, 40, 0.5);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    border-radius: 10px;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    min-width: 140px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.map-switch-button:hover {
+    background: rgba(35, 38, 45, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 
+        0 6px 25px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.map-switch-button:active {
+    transform: translateY(0);
+    box-shadow: 
+        0 2px 10px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* Текст кнопки */
+.map-switch-text {
+    font-family: Arial, sans-serif;
+    color: #d0d0d0;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: center;
+    flex: 1;
+}
+
+.map-switch-button:hover .map-switch-text {
+    color: #ffffff;
 }

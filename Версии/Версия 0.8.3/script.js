@@ -4,27 +4,52 @@
 
 // Константы для карты
 const IMAGE_BOUNDS = [[0, 0], [800, 800]];
-const IMAGE_URL = 'assets/worldmap.png';
+const IMAGE_URL = 'assets/worldmap.webp';
 
 // Глобальные переменные
 let map;
-let allMarkers = [];
 let markersByFilter = {
-    'Алтари': [], 'Бижутерия': [], 'Жуки': [], 'Записки': [], 
-    'Квестовые предметы': [], 'Ключи': [], 'Книги': [], 'Книги Древних': [],
-    'Костры': [], 'Места для отдыха': [], 'Места для рыбалки': [], 'НПС': [],
-    'Обелиски': [], 'Опасные противники': [], 'Пещеры': [], 'Предметы': [],
-    'Ремесло': [], 'Рецепты': [], 'Рудные жилы': [], 'Сундуки': [],
-    'Телепорты': [], 'Точки исследования': [], 'Травы': [], 'Характеристики': [],
-    'Хряк контрабандистов': [], 'Мои метки': []
+    'Алтари': [],
+    'Бижутерия': [],
+    'Жуки': [],
+    'Записки': [], 
+    'Ключи': [],
+    'Книги': [],
+    'Книги Древних': [],
+    'Костры': [],
+    'Легендарное оружие': [],
+    'Места для отдыха': [],
+    'Места для рыбалки': [],
+    'НИП': [],
+    'Обелиски': [],
+    'Опасные противники': [],
+    'Особые': [],
+    'Пещеры': [],
+    'Предметы': [],
+    'Ремесло': [],
+    'Рецепты': [],
+    'Рудные жилы': [],
+    'Сундуки': [],
+    'Телепорты': [],
+    'Точки исследования': [],
+    'Травы': [],
+    'Характеристики': [],
+    'Хряк контрабандистов': [],
+    'Мои метки': []
 };
-
-// Состояния
-let filterStates = {};
 let subfilters = {
     'Бижутерия': ['Правые кольца', 'Левые кольца', 'Амулеты'],
+    'НИП': ['Квестодатели', 'Торговцы', 'Учителя созидания', 'Учителя выживания', 'Учителя войны', 'Другие'],
+    'Опасные противники': ['Альфа', 'Квестовые монстры'],
+    'Особые': ['Головоломки', 'Квестовые вещи', 'Неизвестно'],
+    'Ремесло': ['Алхимия', 'Верстаки', 'Заточка', 'Ковка', 'Плавильня', 'Укрепление', 'Шкуры', 'Ювелир'],
+    'Рудные жилы': ['Железные', 'Золотые', 'Кристаллические', 'Угольные'],
+    'Сундуки': ['Взломать', 'Копать', 'Шифр'],
+    'Травы': ['Бык', 'Здравица', 'Зорька', 'Ловчанка', 'Мул', 'Лунный побег'],
     'Характеристики': ['Сила', 'Ловкость', 'Выносливость', 'Проницательность', 'Крепкость', 'Свободные очки', 'Навыки']
 };
+// Состояния
+let filterStates = {};
 let subfilterStates = {};
 // Хранилище состояний "отмечено" для маркеров
 let markedMarkers = {};
@@ -34,7 +59,6 @@ let coordsEnabled = false;
 
 // Режим создания меток
 let createMarkersMode = false;
-let userMarkers = [];
 
 // Счетчик для уникальных ID пользовательских меток
 let userMarkerCounter = 0;
@@ -61,25 +85,26 @@ const filtersConfig = [
     { name: 'Бижутерия', color: '#4CAF50', icon: 'assets/jewelry.png', hasSubfilters: true },
     { name: 'Жуки', color: '#4CAF50', icon: 'assets/beetle.png', hasSubfilters: false },
     { name: 'Записки', color: '#4CAF50', icon: 'assets/note.png', hasSubfilters: false },
-    { name: 'Квестовые предметы', color: '#4CAF50', icon: 'assets/unknown.png', hasSubfilters: false },
     { name: 'Ключи', color: '#4CAF50', icon: 'assets/key.png', hasSubfilters: false },
     { name: 'Книги', color: '#4CAF50', icon: 'assets/book.png', hasSubfilters: false },
     { name: 'Книги Древних', color: '#4CAF50', icon: 'assets/ancient_book.png', hasSubfilters: false },
     { name: 'Костры', color: '#4CAF50', icon: 'assets/fire.png', hasSubfilters: false },
+    { name: 'Легендарное оружие', color: '#4CAF50', icon: 'assets/legend.png', hasSubfilters: false },
     { name: 'Места для отдыха', color: '#4CAF50', icon: 'assets/rest.png', hasSubfilters: false },
     { name: 'Места для рыбалки', color: '#4CAF50', icon: 'assets/fishing.png', hasSubfilters: false },
-    { name: 'НПС', color: '#4CAF50', icon: 'assets/npc.png', hasSubfilters: false },
+    { name: 'НИП', color: '#4CAF50', icon: 'assets/npc.png', hasSubfilters: true },
     { name: 'Обелиски', color: '#4CAF50', icon: 'assets/obelisk.png', hasSubfilters: false },
-    { name: 'Опасные противники', color: '#4CAF50', icon: 'assets/monster.png', hasSubfilters: false },
+    { name: 'Опасные противники', color: '#4CAF50', icon: 'assets/monster.png', hasSubfilters: true },
+    { name: 'Особые', color: '#4CAF50', icon: 'assets/unknown.png', hasSubfilters: true },
     { name: 'Пещеры', color: '#4CAF50', icon: 'assets/cave.png', hasSubfilters: false },
     { name: 'Предметы', color: '#4CAF50', icon: 'assets/item.png', hasSubfilters: false },
     { name: 'Ремесло', color: '#4CAF50', icon: 'assets/craft.png', hasSubfilters: false },
     { name: 'Рецепты', color: '#4CAF50', icon: 'assets/recipe.png', hasSubfilters: false },
-    { name: 'Рудные жилы', color: '#4CAF50', icon: 'assets/ore.png', hasSubfilters: false },
-    { name: 'Сундуки', color: '#4CAF50', icon: 'assets/chest.png', hasSubfilters: false },
+    { name: 'Рудные жилы', color: '#4CAF50', icon: 'assets/ore.png', hasSubfilters: true },
+    { name: 'Сундуки', color: '#4CAF50', icon: 'assets/chest.png', hasSubfilters: true },
     { name: 'Телепорты', color: '#4CAF50', icon: 'assets/teleport.png', hasSubfilters: false },
     { name: 'Точки исследования', color: '#4CAF50', icon: 'assets/complite.png', hasSubfilters: false },
-    { name: 'Травы', color: '#4CAF50', icon: 'assets/herb.png', hasSubfilters: false },
+    { name: 'Травы', color: '#4CAF50', icon: 'assets/herb.png', hasSubfilters: true },
     { name: 'Характеристики', color: '#4CAF50', icon: 'assets/stats.png', hasSubfilters: true },
     { name: 'Хряк контрабандистов', color: '#4CAF50', icon: 'assets/pig.png', hasSubfilters: false },
     { name: 'Мои метки', color: '#4CAF50', icon: 'assets/marker.png', hasSubfilters: false }
@@ -96,6 +121,44 @@ const specialMarksConfig = [
 
 let specialMarksStates = {};
 let specialSubmarksStates = {};
+// Конфигурация слоёв (карт)
+const layersConfig = [
+    {
+        id: 'worldmap',
+        name: 'Основной мир',
+        imageUrl: 'assets/worldmap.webp',
+        bounds: [[0, 0], [800, 800]],
+        icon: 'assets/worldmap-icon.png',
+        minZoom: 0,
+        maxZoom: 5,
+        defaultZoom: 0
+    },
+    {
+        id: 'greyshaft-city',
+        name: 'Грейшафт-Сити',
+        imageUrl: 'assets/greyshaft-city.png',
+        bounds: [[0, 0], [800, 800]],
+        icon: 'assets/greyshaft-icon.png',
+        minZoom: 0,
+        maxZoom: 3,
+        defaultZoom: 0
+    }
+];
+// Глобальные переменные для слоёв
+let currentLayer = 'worldmap';
+let layerImageOverlays = {};
+let markersByLayer = {
+    'worldmap': [],
+    'greyshaft-city': []
+};
+let userMarkersByLayer = {
+    'worldmap': [],
+    'greyshaft-city': []
+};
+let markedMarkersByLayer = {
+    'worldmap': {},
+    'greyshaft-city': {}
+};
 
 // ============================================
 // ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ КАРТЫ
@@ -105,20 +168,27 @@ let specialSubmarksStates = {};
  * Инициализация карты Leaflet
  */
 function initMap() {
+    // Получаем конфиг текущего слоя
+    const currentLayerConfig = layersConfig.find(l => l.id === currentLayer);
+    
     map = L.map('map', {
         crs: L.CRS.Simple,
-        maxBounds: IMAGE_BOUNDS,
-        maxZoom: 5,
-        minZoom: 0,
+        maxBounds: currentLayerConfig ? currentLayerConfig.bounds : IMAGE_BOUNDS,
+        maxZoom: currentLayerConfig ? currentLayerConfig.maxZoom : 5,
+        minZoom: currentLayerConfig ? currentLayerConfig.minZoom : 0,
         doubleClickZoom: false,
     });
-    
-    // Добавляем изображение карты
-    L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
     
     // Настраиваем контролы
     map.removeControl(map.zoomControl);
     L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Добавляем изображение карты (будет обновлено в initLayers)
+    L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
+    
+    // Устанавливаем вид по умолчанию для текущего слоя
+    const defaultZoom = currentLayerConfig ? currentLayerConfig.defaultZoom : 0;
+    map.setView([400, 400], defaultZoom);
     
     // Инициализация иконок
     initMarkerIcons();
@@ -142,16 +212,17 @@ function initMarkerIcons() {
         'Бижутерия': 'assets/jewelry.png',
         'Жуки': 'assets/beetle.png',
         'Записки': 'assets/note.png',
-        'Квестовые предметы': 'assets/unknown.png',
         'Ключи': 'assets/key.png',
         'Книги': 'assets/book.png',
         'Книги Древних': 'assets/ancient_book.png',
         'Костры': 'assets/fire.png',
+        'Легендарное оружие': 'assets/legend.png',
         'Места для отдыха': 'assets/rest.png',
         'Места для рыбалки': 'assets/fishing.png',
         'НПС': 'assets/npc.png',
         'Обелиски': 'assets/obelisk.png',
         'Опасные противники': 'assets/monster.png',
+        'Особые': 'assets/unknown.png',        
         'Пещеры': 'assets/cave.png',
         'Предметы': 'assets/item.png',
         'Ремесло': 'assets/craft.png',
@@ -224,6 +295,7 @@ function setupEventListeners() {
         saveSpecialMarksStates();
         saveToolsStates();
         saveMarkedMarkers();
+        saveUserMarkers();
     });
     
     // Периодическое сохранение
@@ -233,7 +305,334 @@ function setupEventListeners() {
         saveSpecialMarksStates();
         saveToolsStates();
         saveMarkedMarkers();
+        saveUserMarkers();
     }, 30000);
+}
+
+// ============================================
+// УПРАВЛЕНИЕ СЛОЯМИ
+// ============================================
+
+/**
+ * Инициализация всех слоёв
+ */
+function initLayers() {
+    layersConfig.forEach(layer => {
+        // Создаем ImageOverlay для каждого слоя
+        const imageOverlay = L.imageOverlay(layer.imageUrl, layer.bounds);
+        layerImageOverlays[layer.id] = imageOverlay;
+        
+        // Скрываем все слои кроме текущего
+        if (layer.id !== currentLayer) {
+            // Просто не добавляем на карту
+        } else {
+            imageOverlay.addTo(map);
+        }
+    });
+}
+
+/**
+ * Переключение на другой слой
+ */
+function switchLayer(layerId) {
+    if (currentLayer === layerId) return;
+    
+    // Сохраняем состояние текущего слоя (только отмеченные метки)
+    saveCurrentLayerState();
+    
+    // Сохраняем состояние карты текущего слоя
+    saveMapState();
+    
+    // Скрываем метки текущего слоя
+    hideCurrentLayerMarkers();
+    
+    // Меняем текущий слой
+    map.setZoom(0);
+    const oldLayer = currentLayer;
+    currentLayer = layerId;
+    
+    // Очищаем markersByFilter
+    clearMarkersByFilter();
+    
+    // Обновляем изображение карты (с новыми параметрами и зумом)
+    updateMapImage();
+    
+    // Загружаем состояние нового слоя (только отмеченные метки)
+    loadLayerState(layerId);
+    
+    // Теперь заполняем markersByFilter для нового слоя
+    populateMarkersByFilter();
+    
+    // Обновляем видимость всех маркеров нового слоя
+    updateAllMarkersVisibility();
+    
+    // Сохраняем выбор слоя
+    saveCurrentLayer();
+    
+    console.log(`Переключен слой с ${oldLayer} на ${layerId}`);
+}
+
+/**
+ * Обновление изображения карты при переключении слоя
+ */
+function updateMapImage() {
+    // Получаем конфиг нового слоя
+    const layerConfig = layersConfig.find(l => l.id === currentLayer);
+    if (!layerConfig) return;
+    
+    // Удаляем текущий ImageOverlay
+    if (layerImageOverlays[currentLayer]) {
+        map.removeLayer(layerImageOverlays[currentLayer]);
+    }
+    
+    // Добавляем новый ImageOverlay
+    const newLayer = layerImageOverlays[currentLayer];
+    if (newLayer) {
+        newLayer.addTo(map);
+        
+        // Устанавливаем новые параметры карты
+        map.setMaxBounds(layerConfig.bounds);
+        map.setMaxZoom(layerConfig.maxZoom);
+        map.setMinZoom(layerConfig.minZoom);
+        
+        // Устанавливаем зум по умолчанию
+        map.setZoom(layerConfig.defaultZoom);
+        
+        // Центрируем карту
+        map.fitBounds(layerConfig.bounds);
+    }
+}
+
+/**
+ * Контрол для кнопки переключения карты
+ */
+const MapSwitchControl = L.Control.extend({
+    options: {
+        position: 'bottomright'
+    },
+    
+    onAdd: function(map) {
+        const switchButton = L.DomUtil.create('div', 'map-switch-button');
+        
+        // Создаем текстовый элемент
+        const switchText = L.DomUtil.create('div', 'map-switch-text', switchButton);
+        switchText.textContent = 'Сменить карту';
+        
+        // Обработчик клика
+        switchButton.onclick = function(e) {
+            // Находим следующий слой
+            const currentIndex = layersConfig.findIndex(l => l.id === currentLayer);
+            const nextIndex = (currentIndex + 1) % layersConfig.length;
+            const nextLayer = layersConfig[nextIndex];
+            
+            // Переключаемся на следующий слой
+            switchLayer(nextLayer.id);
+            
+            // Можно показать всплывающее сообщение на кнопке
+            switchText.textContent = 'Карта изменена';
+            setTimeout(() => {
+                switchText.textContent = 'Сменить карту';
+            }, 1000);
+            
+            L.DomEvent.stopPropagation(e);
+        };
+        
+        return switchButton;
+    }
+});
+
+/**
+ * Сохранение состояния текущего слоя
+ */
+function saveCurrentLayerState() {
+    
+    // Сохраняем состояние отмеченных меток текущего слоя
+    markedMarkersByLayer[currentLayer] = { ...markedMarkers };
+    
+    // Сохраняем состояние инструментов
+    saveToolsStates();
+}
+
+/**
+ * Загрузка состояния слоя
+ */
+function loadLayerState(layerId) {    
+    // Загружаем состояние отмеченных маркеров
+    const layerMarkedMarkers = markedMarkersByLayer[layerId];
+    if (layerMarkedMarkers) {
+        // Очищаем текущие отмеченные маркеры
+        markedMarkers = {};
+        // Копируем отмеченные маркеры из слоя
+        Object.assign(markedMarkers, layerMarkedMarkers);
+    } else {
+        markedMarkers = {};
+    }
+    
+    // Обновляем видимость маркеров нового слоя
+    updateAllMarkersVisibility();
+    
+    // Обновляем состояния UI
+    updateAllUIStates();
+}
+
+/**
+ * Инициализация состояний фильтров для нового слоя
+ */
+function initFilterStatesForLayer() {
+    filtersConfig.forEach(filter => {
+        if (!filter.special && !subfilters[filter.name] && filterStates[filter.name] === undefined) {
+            filterStates[filter.name] = true;
+        }
+    });
+}
+
+function initSubfilterStatesForLayer() {
+    Object.keys(subfilters).forEach(parentFilter => {
+        subfilters[parentFilter].forEach(subfilter => {
+            if (subfilterStates[subfilter] === undefined) {
+                subfilterStates[subfilter] = true;
+            }
+        });
+    });
+}
+
+function initSpecialMarksStatesForLayer() {
+    specialMarksConfig.forEach(mark => {
+        if (specialMarksStates[mark.name] === undefined) {
+            specialMarksStates[mark.name] = mark.completed;
+        }
+    });
+}
+
+function initSpecialSubmarksStatesForLayer() {
+    specialMarksConfig.forEach(mark => {
+        if (mark.hasSubmarks && mark.submarks) {
+            mark.submarks.forEach(submark => {
+                const fullName = `${mark.name} - ${submark}`;
+                if (specialSubmarksStates[fullName] === undefined) {
+                    specialSubmarksStates[fullName] = false;
+                }
+            });
+        }
+    });
+}
+
+/**
+ * Обновление всех состояний UI
+ */
+function updateAllUIStates() {
+    // Обновляем фильтры
+    Object.keys(filterElements).forEach(filterName => {
+        updateFilterCheckboxState(filterName);
+    });
+    
+    // Обновляем подфильтры
+    Object.keys(subfilterElements).forEach(subfilterName => {
+        const element = subfilterElements[subfilterName];
+        if (element) {
+            if (subfilterStates[subfilterName]) {
+                element.checkmark.classList.add('active');
+                element.checkbox.classList.add('active');
+            } else {
+                element.checkmark.classList.remove('active');
+                element.checkbox.classList.remove('active');
+            }
+        }
+    });
+    
+    // Обновляем особые метки
+    specialMarksConfig.forEach(mark => {
+        updateSpecialMarkCheckboxState(mark.name);
+    });
+    
+    // Обновляем чекбокс "Все фильтры"
+    updateAllFiltersCheckbox();
+}
+
+/**
+ * Скрытие маркеров текущего слоя
+ */
+function hideCurrentLayerMarkers() {
+    // Скрываем обычные маркеры
+    if (markersByLayer[currentLayer]) {
+        markersByLayer[currentLayer].forEach(marker => {
+            if (map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
+        });
+    }
+    
+    // Скрываем пользовательские метки
+    if (userMarkersByLayer[currentLayer]) {
+        userMarkersByLayer[currentLayer].forEach(marker => {
+            if (map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
+        });
+    }
+    
+    // Закрываем все тултипы
+    closeAllTooltips();
+}
+
+/**
+ * Сохранение выбранного слоя
+ */
+function saveCurrentLayer() {
+    localStorage.setItem('currentLayer', currentLayer);
+}
+
+/**
+ * Загрузка выбранного слоя
+ */
+function loadCurrentLayer() {
+    const saved = localStorage.getItem('currentLayer');
+    if (saved && layersConfig.some(l => l.id === saved)) {
+        currentLayer = saved;
+        return true;
+    }
+    return false;
+}
+
+// ============================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С МАРКЕРАМИ
+// ============================================
+
+/**
+ * Получить все маркеры текущего слоя (обычные + пользовательские)
+ */
+function getAllMarkersForCurrentLayer() {
+    const regularMarkers = markersByLayer[currentLayer] || [];
+    const userMarkers = userMarkersByLayer[currentLayer] || [];
+    return [...regularMarkers, ...userMarkers];
+}
+
+/**
+ * Получить все маркеры по ID слоя
+ */
+function getAllMarkersForLayer(layerId) {
+    const regularMarkers = markersByLayer[layerId] || [];
+    const userMarkers = userMarkersByLayer[layerId] || [];
+    return [...regularMarkers, ...userMarkers];
+}
+
+/**
+ * Найти маркер по ID во всех слоях
+ */
+function findMarkerById(markerId) {
+    // Ищем во всех слоях
+    for (const layerId in markersByLayer) {
+        const marker = markersByLayer[layerId]?.find(m => m.customId === markerId);
+        if (marker) return { marker, layer: layerId, isUserMarker: false };
+    }
+    
+    // Ищем в пользовательских метках
+    for (const layerId in userMarkersByLayer) {
+        const marker = userMarkersByLayer[layerId]?.find(m => m.customId === markerId);
+        if (marker) return { marker, layer: layerId, isUserMarker: true };
+    }
+    
+    return null;
 }
 
 // ============================================
@@ -241,7 +640,7 @@ function setupEventListeners() {
 // ============================================
 
 /**
- * Сохранение состояния карты (позиция и зум)
+ * Сохранение состояния карты
  */
 function saveMapState() {
     try {
@@ -252,23 +651,31 @@ function saveMapState() {
             lat: center.lat,
             lng: center.lng,
             zoom: zoom,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            layer: currentLayer
         };
         
-        localStorage.setItem('mapViewState', JSON.stringify(mapState));
+        // Сохраняем отдельно для каждого слоя
+        localStorage.setItem(`mapViewState_${currentLayer}`, JSON.stringify(mapState));
     } catch (error) {
         console.error('Ошибка сохранения состояния карты:', error);
     }
 }
 
 /**
- * Загрузка состояния карты
+ * Загрузка состояния карты для текущего слоя
  */
 function loadMapState() {
     try {
-        const saved = localStorage.getItem('mapViewState');
+        const saved = localStorage.getItem(`mapViewState_${currentLayer}`);
         if (saved) {
             const mapState = JSON.parse(saved);
+            
+            // Проверяем, что состояние для правильного слоя
+            if (mapState.layer !== currentLayer) {
+                console.log('Состояние карты для другого слоя, используем настройки по умолчанию');
+                return false;
+            }
             
             if (mapState.lat && mapState.lng && mapState.zoom !== undefined) {
                 map.setView([mapState.lat, mapState.lng], mapState.zoom, {
@@ -312,7 +719,7 @@ function loadFilterStates() {
                 Object.assign(subfilterStates, states.subfilterStates);
             }
             
-            console.log('Состояния фильтров загружены из localStorage');
+            console.log('Состояния фильтров загружены из localStorage (общие для всех слоев)');
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний фильтров:', error);
@@ -367,7 +774,7 @@ function loadSpecialMarksStates() {
                 Object.assign(specialSubmarksStates, states.specialSubmarksStates);
             }
             
-            console.log('Состояния особых меток загружены');
+            console.log('Состояния особых меток загружены (общие для всех слоев)');
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний особых меток:', error);
@@ -424,20 +831,28 @@ function loadToolsStates() {
  */
 function saveUserMarkers() {
     try {
-        const markersToSave = userMarkers.map(marker => ({
-            id: marker.customId,
-            name: marker.markerData.Название,
-            filters: marker.markerData.ОсновныеФильтры,
-            subfilters: marker.markerData.Подфильтры,
-            allFilters: marker.markerData.ВсеФильтрыВПорядке,
-            x: marker.markerData.X,
-            y: marker.markerData.Y,
-            comment: marker.markerData.Комментарий || '',
-            isMarked: markedMarkers[marker.customId] || false
-        }));
-        
-        localStorage.setItem('userMarkers', JSON.stringify(markersToSave));
-        console.log('Пользовательские метки сохранены:', markersToSave.length);
+        // Сохраняем метки для каждого слоя
+        layersConfig.forEach(layer => {
+            const layerMarkers = userMarkersByLayer[layer.id] || [];
+            const markersToSave = layerMarkers.map(marker => {
+                const data = marker.markerData;
+                return {
+                    id: marker.customId,
+                    name: data.Название,
+                    filters: data.ОсновныеФильтры,
+                    subfilters: data.Подфильтры,
+                    allFilters: data.ВсеФильтрыВПорядке,
+                    x: data.X,
+                    y: data.Y,
+                    comment: data.Комментарий || '',
+                    layer: data.Карта || layer.id, // Явно сохраняем слой
+                    isMarked: markedMarkersByLayer[layer.id]?.[marker.customId] || false
+                };
+            });
+            
+            localStorage.setItem(`userMarkers_${layer.id}`, JSON.stringify(markersToSave));
+            console.log(`Пользовательские метки для слоя ${layer.id} сохранены: ${markersToSave.length}`);
+        });
     } catch (error) {
         console.error('Ошибка сохранения пользовательских меток:', error);
     }
@@ -448,51 +863,55 @@ function saveUserMarkers() {
  */
 function loadUserMarkers() {
     try {
-        const saved = localStorage.getItem('userMarkers');
-        if (saved) {
-            const markersData = JSON.parse(saved);
-            
-            // Обновляем счетчик
-            markersData.forEach(data => {
-                const idParts = data.id.split('_');
-                const counterPart = parseInt(idParts[idParts.length - 1]);
-                if (!isNaN(counterPart) && counterPart >= userMarkerCounter) {
-                    userMarkerCounter = counterPart + 1;
-                }
-            });
-            
-            markersData.forEach(data => {
-                // Создаем объект данных маркера в том же формате, что и из CSV
-                const markerData = {
-                    Название: data.name,
-                    ОсновныеФильтры: data.filters || ['Мои метки'],
-                    Подфильтры: data.subfilters || [],
-                    ВсеФильтрыВПорядке: data.allFilters || ['Мои метки'],
-                    X: data.x,
-                    Y: data.y,
-                    Комментарий: data.comment || ''
-                };
+        layersConfig.forEach(layer => {
+            const saved = localStorage.getItem(`userMarkers_${layer.id}`);
+            if (saved) {
+                const markersData = JSON.parse(saved);
                 
-                // Создаем маркер с правильным ID
-                const marker = createUserMarker(markerData, data.id);
+                markersData.forEach(data => {
+                    // ВАЖНО: Проверяем, что данные содержат информацию о слое
+                    // Если нет - используем слой из ключа localStorage
+                    const markerLayer = data.layer || data.Карта || layer.id;
+                    
+                    // Создаем объект данных маркера
+                    const markerData = {
+                        Название: data.name,
+                        ОсновныеФильтры: data.filters || ['Мои метки'],
+                        Подфильтры: data.subfilters || [],
+                        ВсеФильтрыВПорядке: data.allFilters || ['Мои метки'],
+                        X: data.x,
+                        Y: data.y,
+                        Комментарий: data.comment || '',
+                        Карта: markerLayer // Явно указываем слой
+                    };
+                    
+                    // Создаем маркер с правильным ID
+                    const marker = createUserMarker(markerData, data.id);
+                    
+                    // Восстанавливаем состояние "отмечено"
+                    if (data.isMarked) {
+                        if (!markedMarkersByLayer[markerLayer]) {
+                            markedMarkersByLayer[markerLayer] = {};
+                        }
+                        markedMarkersByLayer[markerLayer][data.id] = true;
+                        
+                        // Обновляем внешний вид если на текущем слое
+                        if (markerLayer === currentLayer) {
+                            setTimeout(() => {
+                                updateMarkerAppearance(marker, true);
+                            }, 100);
+                        }
+                    }
+                });
                 
-                // Восстанавливаем состояние "отмечено"
-                if (data.isMarked) {
-                    markedMarkers[data.id] = true;
-                    // Обновляем внешний вид
-                    setTimeout(() => {
-                        updateMarkerAppearance(marker, true);
-                    }, 100);
-                }
-            });
-            
-            console.log('Пользовательские метки загружены:', markersData.length);
-            
-            // ОБНОВЛЯЕМ ВИДИМОСТЬ ПОСЛЕ ЗАГРУЗКИ
-            setTimeout(() => {
-                updateAllMarkersVisibility();
-            }, 200);
-        }
+                console.log(`Пользовательские метки для слоя ${layer.id} загружены: ${markersData.length}`);
+            }
+        });
+        
+        // ОБНОВЛЯЕМ ВИДИМОСТЬ ПОСЛЕ ЗАГРУЗКИ
+        setTimeout(() => {
+            updateAllMarkersVisibility();
+        }, 200);
     } catch (error) {
         console.error('Ошибка загрузки пользовательских меток:', error);
     }
@@ -548,141 +967,73 @@ function initAllStates() {
 // ============================================
 
 /**
- * Загрузка меток из CSV файла
+ * Загрузка меток из JSON файла
  */
-async function loadMarkersFromCSV() {
+async function loadMarkersFromJSON() {
     try {
-        const response = await fetch('tags.csv');
+        const response = await fetch('tags.json');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const csvText = await response.text();
-        const markersData = parseCSV(csvText);
+        const markersData = await response.json();
         
-        console.log(`Парсинг CSV: найдено ${markersData.length} записей`);
+        console.log(`Загрузка JSON: найдено ${markersData.length} записей`);
         
         // Очищаем предыдущие маркеры
         allMarkers = [];
         markersByFilter = {
-            'Алтари': [], 'Бижутерия': [], 'Жуки': [], 'Записки': [], 
-            'Квестовые предметы': [], 'Ключи': [], 'Книги': [], 'Книги Древних': [],
-            'Костры': [], 'Места для отдыха': [], 'Места для рыбалки': [], 'НПС': [],
-            'Обелиски': [], 'Опасные противники': [], 'Пещеры': [], 'Предметы': [],
-            'Ремесло': [], 'Рецепты': [], 'Рудные жилы': [], 'Сундуки': [],
-            'Телепорты': [], 'Точки исследования': [], 'Травы': [], 'Характеристики': [],
-            'Хряк контрабандистов': [], 'Мои метки': []
+        'Алтари': [], 'Бижутерия': [], 'Жуки': [], 'Записки': [], 
+        'Квестовые предметы': [], 'Ключи': [], 'Книги': [], 'Книги Древних': [],
+        'Костры': [], 'Легендарное оружие': [], 'Места для отдыха': [], 'Места для рыбалки': [],
+        'НИП': [], 'Обелиски': [], 'Опасные противники': [], 'Пещеры': [],
+        'Предметы': [], 'Ремесло': [], 'Рецепты': [], 'Рудные жилы': [],
+        'Сундуки': [], 'Телепорты': [], 'Точки исследования': [], 'Травы': [],
+        'Характеристики': [], 'Хряк контрабандистов': [], 'Мои метки': []
         };
         
         // Создаем маркеры
         markersData.forEach((data, index) => {
             if (data.Название && !isNaN(data.X) && !isNaN(data.Y)) {
                 console.log(`Создание маркера ${index + 1}: ${data.Название}`);
-                createMarker(data);
+                createMarkerFromJSON(data);
             }
         });
         
-        console.log(`Создано ${allMarkers.length} маркеров из CSV`);
-        
-        // Загружаем состояние отмеченных маркеров ПОСЛЕ создания всех маркеров
-        console.log('Загружаем состояние отмеченных маркеров...');
+        console.log(`Создано ${allMarkers.length} маркеров из JSON`);
         
         // Инициализируем видимость
         initializeMarkersVisibility();
         
     } catch (error) {
-        console.error('Ошибка загрузки CSV:', error);
+        console.error('Ошибка загрузки JSON:', error);
         console.log('Создаю тестовые метки...');
         createTestMarkers();
-        
-        // Загружаем состояние отмеченных маркеров и для тестовых
-        console.log('Загружаем состояние отмеченных маркеров для тестовых...');
         
         initializeMarkersVisibility();
     }
 }
 
 /**
- * Парсинг CSV данных
- */
-function parseCSV(csvText) {
-    const lines = csvText.split('\n');
-    const markers = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line || line === ',,,,' || line.startsWith('#') || i === 0) continue;
-        
-        const match = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-        if (!match || match.length < 4) continue;
-        
-        const name = match[0].replace(/"/g, '').trim();
-        const subfiltersStr = match[1].replace(/"/g, '').trim();
-        const x = parseFloat(match[2]);
-        const y = parseFloat(match[3]);
-        const comment = match[4] ? match[4].replace(/"/g, '').trim() : '';
-        
-        if (name && !isNaN(x) && !isNaN(y)) {
-            const markerFilters = subfiltersStr.split(';').map(f => f.trim()).filter(f => f);
-            const mainFilters = [];
-            const subfiltersList = [];
-            
-            markerFilters.forEach(filterName => {
-                let isSubfilter = false;
-                
-                for (const [parentFilter, subfilterList] of Object.entries(subfilters)) {
-                    if (subfilterList.includes(filterName)) {
-                        if (!mainFilters.includes(parentFilter)) {
-                            mainFilters.push(parentFilter);
-                        }
-                        subfiltersList.push(filterName);
-                        isSubfilter = true;
-                        break;
-                    }
-                }
-                
-                if (!isSubfilter && !mainFilters.includes(filterName)) {
-                    mainFilters.push(filterName);
-                }
-            });
-            
-            markers.push({
-                Название: name,
-                ОсновныеФильтры: mainFilters,
-                Подфильтры: subfiltersList,
-                ВсеФильтрыВПорядке: markerFilters,
-                X: x,
-                Y: y,
-                Комментарий: comment
-            });
-        }
-    }
-    
-    return markers;
-}
-
-/**
- * Генерация уникального ID для маркера
- */
-function generateMarkerId(data) {
-    // Используем координаты и название для создания уникального ID
-    return `marker_${data.X}_${data.Y}_${data.Название.replace(/\s+/g, '_')}`;
-}
-
-/**
  * Создание маркера на карте
  */
-function createMarker(data) {
+function createMarkerFromJSON(data) {
+    // Проверяем, для какого слоя эта метка
+    const markerLayer = data.Карта || 'worldmap';
+    
+    // Если метка не для текущего слоя, пропускаем создание на карте
+    const addToMap = markerLayer === currentLayer;
+    
     let iconToUse = markerIcons['default'];
     
-    if (data.ВсеФильтрыВПорядке && data.ВсеФильтрыВПорядке.length > 0) {
-        const firstFilter = data.ВсеФильтрыВПорядке[0];
-        
-        if (markerIcons[firstFilter]) {
-            iconToUse = markerIcons[firstFilter];
+    // Используем поле "Иконка" для определения иконки
+    if (data.Иконка) {
+        if (markerIcons[data.Иконка]) {
+            iconToUse = markerIcons[data.Иконка];
         } else {
+            // Пробуем найти среди подфильтров
             for (const [parentFilter, subfilterList] of Object.entries(subfilters)) {
-                if (subfilterList.includes(firstFilter) && markerIcons[parentFilter]) {
+                if (subfilterList.includes(data.Иконка) && markerIcons[parentFilter]) {
                     iconToUse = markerIcons[parentFilter];
                     break;
                 }
@@ -696,9 +1047,10 @@ function createMarker(data) {
         bubblingMouseEvents: false
     });
     
-    // Генерируем уникальный ID для маркера
-    const markerId = generateMarkerId(data);
-    marker.customId = markerId; // Сохраняем кастомный ID в объекте маркера
+    // Используем ID из JSON или генерируем новый
+    const markerId = data.ID || generateMarkerId(data);
+    marker.customId = markerId;
+    marker.layer = markerLayer; // Сохраняем информацию о слое
     
     // Popup для наведения
     const popupContent = `
@@ -717,36 +1069,91 @@ function createMarker(data) {
     
     marker.bindPopup(popup);
     
-    // Переменная для tooltip
-    let tooltip = null;
+    // Подготавливаем данные в нужном формате
+    const markerData = {
+        Название: data.Название,
+        ОсновныеФильтры: data.ОсновныеФильтры || [],
+        Подфильтры: data.Подфильтры || [],
+        ВсеФильтрыВПорядке: buildAllFilters(data),
+        X: data.X,
+        Y: data.Y,
+        Комментарий: data.Комментарий || '',
+        Карта: markerLayer // Сохраняем слой
+    };
     
-    // Обработчики событий маркера
-    setupMarkerEventHandlers(marker, data, tooltip);
+    // Настраиваем обработчики событий
+    let tooltip = null;
+    setupMarkerEventHandlers(marker, markerData, tooltip);
     
     // Сохраняем данные в маркере
-    marker.markerData = data;
+    marker.markerData = markerData;
     marker.mainFilters = data.ОсновныеФильтры || [];
     marker.subfilters = data.Подфильтры || [];
+    marker.isUserMarker = false;
     
-    // Добавляем в глобальные массивы
-    allMarkers.push(marker);
+    // Добавляем в массив слоя
+    if (!markersByLayer[markerLayer]) {
+        markersByLayer[markerLayer] = [];
+    }
+    markersByLayer[markerLayer].push(marker);
     
-    // Распределяем по фильтрам
-    data.ОсновныеФильтры.forEach(filter => {
-        if (!markersByFilter[filter]) {
-            markersByFilter[filter] = [];
-        }
-        markersByFilter[filter].push(marker);
-    });
+    // Распределяем по фильтрам (для текущего слоя)
+    if (markerLayer === currentLayer && data.ОсновныеФильтры) {
+        data.ОсновныеФильтры.forEach(filter => {
+            if (!markersByFilter[filter]) {
+                markersByFilter[filter] = [];
+            }
+            markersByFilter[filter].push(marker);
+        });
+    }
     
-    data.Подфильтры.forEach(subfilter => {
-        if (!markersByFilter[subfilter]) {
-            markersByFilter[subfilter] = [];
-        }
-        markersByFilter[subfilter].push(marker);
-    });
+    if (markerLayer === currentLayer && data.Подфильтры) {
+        data.Подфильтры.forEach(subfilter => {
+            if (!markersByFilter[subfilter]) {
+                markersByFilter[subfilter] = [];
+            }
+            markersByFilter[subfilter].push(marker);
+        });
+    }
+    
+    // Добавляем на карту если видим и для текущего слоя
+    if (addToMap && shouldMarkerBeVisible(marker)) {
+        marker.addTo(map);
+    }
     
     return marker;
+}
+
+/**
+ * Строим массив "ВсеФильтрыВПорядке" из данных JSON
+ */
+function buildAllFilters(data) {
+    const allFilters = [];
+    
+    // Добавляем основной фильтр для иконки первым
+    if (data.Иконка && !allFilters.includes(data.Иконка)) {
+        allFilters.push(data.Иконка);
+    }
+    
+    // Добавляем основные фильтры
+    if (data.ОсновныеФильтры) {
+        data.ОсновныеФильтры.forEach(filter => {
+            if (!allFilters.includes(filter)) {
+                allFilters.push(filter);
+            }
+        });
+    }
+    
+    // Добавляем подфильтры
+    if (data.Подфильтры) {
+        data.Подфильтры.forEach(subfilter => {
+            if (!allFilters.includes(subfilter)) {
+                allFilters.push(subfilter);
+            }
+        });
+    }
+    
+    return allFilters;
 }
 
 /**
@@ -756,28 +1163,62 @@ function loadMarkedMarkers() {
     console.log('Функция loadMarkedMarkers() вызвана');
     
     try {
-        const saved = localStorage.getItem('markedMarkers');
-        console.log('Данные из localStorage:', saved);
+        // Инициализируем структуры для всех слоев
+        layersConfig.forEach(layer => {
+            if (!markedMarkersByLayer[layer.id]) {
+                markedMarkersByLayer[layer.id] = {};
+            }
+        });
         
-        if (saved) {
-            markedMarkers = JSON.parse(saved);
+        // Загружаем для каждого слоя
+        layersConfig.forEach(layer => {
+            const saved = localStorage.getItem(`markedMarkers_${layer.id}`);
             
-            console.log(`Загружено состояние для ${Object.keys(markedMarkers).length} отмеченных маркеров`);
-            
-            // Применяем состояние к существующим маркерам
-            allMarkers.forEach(marker => {
-                const markerId = marker.customId;
-                if (markedMarkers[markerId]) {
-                    console.log(`Применяем отмеченное состояние к маркеру ${markerId}`);
-                    updateMarkerAppearance(marker, true);
+            if (saved) {
+                try {
+                    const layerMarkedMarkers = JSON.parse(saved);
+                    
+                    // Фильтруем некорректные записи
+                    const validMarkedMarkers = {};
+                    Object.entries(layerMarkedMarkers).forEach(([markerId, isMarked]) => {
+                        if (typeof isMarked === 'boolean') {
+                            validMarkedMarkers[markerId] = isMarked;
+                        }
+                    });
+                    
+                    markedMarkersByLayer[layer.id] = validMarkedMarkers;
+                    
+                    console.log(`Загружено состояние для ${Object.keys(validMarkedMarkers).length} отмеченных маркеров слоя ${layer.id}`);
+                    
+                    // Если это текущий слой, применяем состояние
+                    if (layer.id === currentLayer) {
+                        markedMarkers = { ...validMarkedMarkers };
+                        
+                        // Применяем состояние к существующим маркерам текущего слоя
+                        const allCurrentMarkers = getAllMarkersForCurrentLayer();
+                        allCurrentMarkers.forEach(marker => {
+                            const markerId = marker.customId;
+                            if (markedMarkers[markerId]) {
+                                console.log(`Применяем отмеченное состояние к маркеру ${markerId} слоя ${layer.id}`);
+                                updateMarkerAppearance(marker, true);
+                            }
+                        });
+                    }
+                } catch (parseError) {
+                    console.error(`Ошибка парсинга данных для слоя ${layer.id}:`, parseError);
+                    markedMarkersByLayer[layer.id] = {};
                 }
-            });
-        } else {
-            console.log('Нет сохраненных данных об отмеченных маркерах');
-            markedMarkers = {};
-        }
+            } else {
+                console.log(`Нет сохраненных данных об отмеченных маркерах для слоя ${layer.id}`);
+                markedMarkersByLayer[layer.id] = {};
+            }
+        });
     } catch (error) {
-        console.error('Ошибка загрузки отмеченных маркеров:', error);
+        console.error('Общая ошибка загрузки отмеченных маркеров:', error);
+        // Инициализируем для всех слоев
+        layersConfig.forEach(layer => {
+            markedMarkersByLayer[layer.id] = {};
+        });
         markedMarkers = {};
     }
 }
@@ -786,28 +1227,32 @@ function loadMarkedMarkers() {
  * Снять все отметки с маркеров
  */
 function clearAllMarkedMarkers() {
-    console.log('Снимаем все отметки с маркеров...');
+    console.log('Снимаем все отметки с маркеров на всех слоях...');
     
-    // Проверяем, есть ли вообще отмеченные маркеры
-    const markedCount = Object.keys(markedMarkers).filter(id => markedMarkers[id]).length;
-    if (markedCount === 0) {
+    // Подсчитываем общее количество отмеченных меток на всех слоях
+    let totalMarkedCount = 0;
+    layersConfig.forEach(layer => {
+        const layerMarked = markedMarkersByLayer[layer.id] || {};
+        totalMarkedCount += Object.keys(layerMarked).filter(id => layerMarked[id]).length;
+    });
+    
+    if (totalMarkedCount === 0) {
         alert('Нет отмеченных меток для снятия.');
         return;
     }
     
-    // Снимаем отметки со всех маркеров
-    allMarkers.forEach(marker => {
+    if (!confirm(`Вы уверены, что хотите снять ВСЕ отметки (${totalMarkedCount} меток)? Это действие нельзя отменить.`)) {
+        return;
+    }
+    
+    // 1. Снимаем отметки на текущем слое
+    const allCurrentMarkers = getAllMarkersForCurrentLayer();
+    allCurrentMarkers.forEach(marker => {
         const markerId = marker.customId;
         if (markedMarkers[markerId]) {
-            // Обновляем состояние
             markedMarkers[markerId] = false;
+            updateMarkerAppearance(marker, false);
             
-            // Обновляем внешний вид маркера, если он на карте
-            if (map.hasLayer(marker)) {
-                updateMarkerAppearance(marker, false);
-            }
-            
-            // Закрываем открытый тултип, если он активен
             if (marker.isTooltipActive) {
                 marker.closeTooltip();
                 marker.isTooltipActive = false;
@@ -818,27 +1263,40 @@ function clearAllMarkedMarkers() {
             }
         }
     });
-
-    // Также снимаем отметки с пользовательских меток в их данных
-    userMarkers.forEach(marker => {
-        const markerId = marker.customId;
-        if (markedMarkers[markerId]) {
-            markedMarkers[markerId] = false;
-            updateMarkerAppearance(marker, false);
+    
+    // 2. Снимаем отметки на всех слоях в структурах данных
+    layersConfig.forEach(layer => {
+        const layerId = layer.id;
+        
+        // Очищаем отмеченные метки в структуре данных
+        markedMarkersByLayer[layerId] = {};
+        
+        // Обновляем видимость меток, если это текущий слой
+        if (layerId === currentLayer) {
+            markedMarkers = {};
         }
+        
+        // Для каждого маркера этого слоя обновляем внешний вид
+        const allLayerMarkers = getAllMarkersForLayer(layerId);
+        allLayerMarkers.forEach(marker => {
+            if (marker.isTooltipActive) {
+                marker.closeTooltip();
+                marker.isTooltipActive = false;
+            }
+        });
     });
     
-    // Сохраняем обновленное состояние
+    // 3. Сохраняем изменения
     saveMarkedMarkers();
-    saveUserMarkers();
+    saveUserMarkers(); // Также сохраняем пользовательские метки
     
-    // Обновляем видимость маркеров (на случай если включен режим скрытия отмеченных)
+    // 4. Обновляем видимость маркеров на текущем слое
     updateAllMarkersVisibility();
     closeAllTooltips();
     
-    // Показываем сообщение об успехе
+    // 5. Показываем сообщение об успехе
     alert(`Все отметки сняты!`);
-    console.log(`Сняты отметки с ${markedCount} маркеров`);
+    console.log(`Сняты все отметки на всех слоях. Всего: ${totalMarkedCount} меток`);
 }
 
 /**
@@ -846,8 +1304,19 @@ function clearAllMarkedMarkers() {
  */
 function saveMarkedMarkers() {
     try {
-        localStorage.setItem('markedMarkers', JSON.stringify(markedMarkers));
-        console.log(`Сохранено ${Object.keys(markedMarkers).length} отмеченных маркеров`);
+        // Убедимся, что у всех слоев есть структуры данных
+        layersConfig.forEach(layer => {
+            if (!markedMarkersByLayer[layer.id]) {
+                markedMarkersByLayer[layer.id] = {};
+            }
+        });
+        
+        // Сохраняем для каждого слоя
+        layersConfig.forEach(layer => {
+            const layerMarkedMarkers = markedMarkersByLayer[layer.id] || {};
+            localStorage.setItem(`markedMarkers_${layer.id}`, JSON.stringify(layerMarkedMarkers));
+            console.log(`Сохранено ${Object.keys(layerMarkedMarkers).length} отмеченных маркеров для слоя ${layer.id}`);
+        });
     } catch (error) {
         console.error('Ошибка сохранения отмеченных маркеров:', error);
     }
@@ -1103,8 +1572,14 @@ function setupCheckboxListeners(markerId) {
  * Обновить видимость маркера при изменении его состояния "отмечено"
  */
 function updateMarkerVisibilityOnMarkedChange(markerId) {
-    const marker = allMarkers.find(m => m.customId === markerId);
-    if (!marker) return;
+    // Находим маркер во всех слоях
+    const markerInfo = findMarkerById(markerId);
+    if (!markerInfo) return;
+    
+    const { marker, layer } = markerInfo;
+    
+    // Проверяем, принадлежит ли маркер текущему слою
+    if (layer !== currentLayer) return;
     
     const shouldBeVisible = shouldMarkerBeVisible(marker);
     const isOnMap = map.hasLayer(marker);
@@ -1125,10 +1600,18 @@ function updateMarkerVisibilityOnMarkedChange(markerId) {
 function toggleMarkerMarked(markerId, checkboxElement) {
     console.log(`toggleMarkerMarked вызван для маркера ${markerId}`);
     
-    // Находим маркер по customId
-    const marker = allMarkers.find(m => m.customId === markerId);
-    if (!marker) {
+    // Находим маркер во всех слоях
+    const markerInfo = findMarkerById(markerId);
+    if (!markerInfo) {
         console.error(`Маркер с ID ${markerId} не найден`);
+        return;
+    }
+    
+    const { marker, layer } = markerInfo;
+    
+    // Проверяем, принадлежит ли маркер текущему слою
+    if (layer !== currentLayer) {
+        console.warn(`Маркер ${markerId} принадлежит слою ${layer}, а текущий слой ${currentLayer}`);
         return;
     }
     
@@ -1137,8 +1620,14 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     
     console.log(`Текущее состояние: ${isCurrentlyMarked}, новое состояние: ${newState}`);
     
-    // Обновляем состояние
+    // Обновляем состояние в текущем слое
     markedMarkers[markerId] = newState;
+    
+    // Обновляем состояние в структуре слоя
+    if (!markedMarkersByLayer[layer]) {
+        markedMarkersByLayer[layer] = {};
+    }
+    markedMarkersByLayer[layer][markerId] = newState;
     
     // Обновляем внешний вид маркера
     updateMarkerAppearance(marker, newState);
@@ -1170,7 +1659,7 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     
     // Сохраняем состояние
     saveMarkedMarkers();
-    console.log(`Сохранено состояние маркера ${markerId}: ${newState}`);
+    console.log(`Сохранено состояние маркера ${markerId} слоя ${layer}: ${newState}`);
 }
 
 /**
@@ -1190,18 +1679,62 @@ window.toggleMarkerMarked = function(markerId, checkboxElement, event) {
  */
 function createTestMarkers() {
     const testData = [
-        { Название: 'Холмистая долина', Фильтры: ['Точки исследования'], Подфильтры: ['Точки исследования'], X: 228, Y: 410, Комментарий: 'На носу корабля' },
-        { Название: 'Зарытый сундук', Фильтры: ['Сундуки', 'Характеристики'], Подфильтры: ['Сундуки', 'Характеристики'], X: 184, Y: 621, Комментарий: '' },
-        { Название: 'Золотое кольцо', Фильтры: ['Бижутерия'], Подфильтры: ['Правое кольцо'], X: 300, Y: 300, Комментарий: '' }
+        {
+            ID: "228_410_Холмистая_долина",
+            Название: "Холмистая долина",
+            Иконка: "Точки исследования",
+            Подфильтры: [],
+            ОсновныеФильтры: ["Точки исследования"],
+            X: 228,
+            Y: 410,
+            Комментарий: "На носу корабля",
+            Карта: "worldmap"
+        },
+        {
+            ID: "184_621_Сундук_(копать)",
+            Название: "Сундук (копать)",
+            Иконка: "Копать",
+            Подфильтры: ["Копать","Ловкость"],
+            ОсновныеФильтры: ["Сундуки", "Характеристики"],
+            X: 184,
+            Y: 621,
+            Комментарий: "Зелье ловкости<br>Отмычки",
+            Карта: "worldmap"
+        },
+        {
+            ID: "300_300_Тестовая_метка",
+            Название: "Тестовая метка",
+            Иконка: "Неизвестно",
+            Подфильтры: ["Неизвестно"],
+            ОсновныеФильтры: ["Особые"],
+            X: 300,
+            Y: 300,
+            Комментарий: "Если ты видишь эту метку,<br>значит JSON не прогрузился",
+            Карта: "worldmap"
+        }
     ];
     
     testData.forEach(data => {
-        const processedData = {
-            ...data,
-            ОсновныеФильтры: data.Фильтры,
-            ВсеФильтрыВПорядке: [...data.Фильтры, ...data.Подфильтры]
-        };
-        createMarker(processedData);
+        createMarkerFromJSON(data);
+    });
+}
+
+/**
+ * Инициализация структур данных для слоёв
+ */
+function initLayerDataStructures() {
+    layersConfig.forEach(layer => {
+        // Инициализируем массивы маркеров
+        if (!markersByLayer[layer.id]) {
+            markersByLayer[layer.id] = [];
+        }
+        if (!userMarkersByLayer[layer.id]) {
+            userMarkersByLayer[layer.id] = [];
+        }
+        // Инициализируем состояния ОТМЕЧЕННЫХ МЕТОК по слоям
+        if (!markedMarkersByLayer[layer.id]) {
+            markedMarkersByLayer[layer.id] = {};
+        }
     });
 }
 
@@ -1228,7 +1761,10 @@ function initializeMarkersVisibility() {
 function updateAllMarkersVisibility() {
     closeAllTooltips();
     
-    allMarkers.forEach(marker => {
+    // Получаем все маркеры текущего слоя
+    const allCurrentMarkers = getAllMarkersForCurrentLayer();
+    
+    allCurrentMarkers.forEach(marker => {
         const shouldBeVisible = shouldMarkerBeVisible(marker);
         const isOnMap = map.hasLayer(marker);
         
@@ -1253,6 +1789,11 @@ function updateAllMarkersVisibility() {
  * Проверка, должен ли маркер быть видимым
  */
 function shouldMarkerBeVisible(marker) {
+    // Проверяем, принадлежит ли маркер текущему слою
+    if (marker.layer !== currentLayer) {
+        return false;
+    }
+    
     const markerId = marker.customId;
     const isMarked = markedMarkers[markerId] || false;
     
@@ -1330,22 +1871,73 @@ function shouldMarkerBeVisible(marker) {
 }
 
 /**
- * Закрытие всех активных тултипов
+ * Очистка массива markersByFilter при смене слоя
  */
-function closeAllTooltips() {
-    allMarkers.forEach(marker => {
-        if (marker.isTooltipActive) {
-            marker.closeTooltip();
-            marker.isTooltipActive = false;
-            const element = marker.getElement();
-            if (element) {
-                element.classList.remove('tooltip-active');
-            }
+function clearMarkersByFilter() {
+    Object.keys(markersByFilter).forEach(key => {
+        markersByFilter[key] = [];
+    });
+}
+
+/**
+ * Заполнение markersByFilter для текущего слоя
+ */
+function populateMarkersByFilter() {
+    clearMarkersByFilter();
+    
+    // Добавляем обычные маркеры текущего слоя
+    const regularMarkers = markersByLayer[currentLayer] || [];
+    regularMarkers.forEach(marker => {
+        if (marker.mainFilters) {
+            marker.mainFilters.forEach(filter => {
+                if (!markersByFilter[filter]) {
+                    markersByFilter[filter] = [];
+                }
+                markersByFilter[filter].push(marker);
+            });
+        }
+        
+        if (marker.subfilters) {
+            marker.subfilters.forEach(subfilter => {
+                if (!markersByFilter[subfilter]) {
+                    markersByFilter[subfilter] = [];
+                }
+                markersByFilter[subfilter].push(marker);
+            });
         }
     });
     
-    // Также закрываем все тултипы пользовательских меток
+    // Добавляем пользовательские метки текущего слоя
+    const userMarkers = userMarkersByLayer[currentLayer] || [];
     userMarkers.forEach(marker => {
+        if (marker.mainFilters) {
+            marker.mainFilters.forEach(filter => {
+                if (!markersByFilter[filter]) {
+                    markersByFilter[filter] = [];
+                }
+                markersByFilter[filter].push(marker);
+            });
+        }
+        
+        if (marker.subfilters) {
+            marker.subfilters.forEach(subfilter => {
+                if (!markersByFilter[subfilter]) {
+                    markersByFilter[subfilter] = [];
+                }
+                markersByFilter[subfilter].push(marker);
+            });
+        }
+    });
+}
+
+/**
+ * Закрытие всех активных тултипов
+ */
+function closeAllTooltips() {
+    // Получаем все маркеры текущего слоя
+    const allCurrentMarkers = getAllMarkersForCurrentLayer();
+    
+    allCurrentMarkers.forEach(marker => {
         if (marker.isTooltipActive) {
             marker.closeTooltip();
             marker.isTooltipActive = false;
@@ -1361,6 +1953,9 @@ function closeAllTooltips() {
  * Создание пользовательской метки
  */
 function createUserMarker(data, customId = null) {
+    // Определяем слой - берем из данных или используем текущий
+    const markerLayer = data.Карта || currentLayer;
+    
     const markerId = customId || `user_marker_${Date.now()}_${userMarkerCounter++}`;
     
     // Используем иконку для "Мои метки"
@@ -1370,11 +1965,12 @@ function createUserMarker(data, customId = null) {
         icon: iconToUse,
         riseOnHover: true,
         bubblingMouseEvents: false,
-        isUserMarker: true // Добавляем флаг для идентификации
+        isUserMarker: true
     });
     
-    // Сохраняем кастомный ID
     marker.customId = markerId;
+    marker.layer = markerLayer; // Сохраняем слой
+    marker.isUserMarker = true;
     
     // Popup для наведения
     const popupContent = `
@@ -1393,41 +1989,47 @@ function createUserMarker(data, customId = null) {
     
     marker.bindPopup(popup);
     
-    // Сохраняем данные
-    marker.markerData = data;
+    // Сохраняем данные с указанием слоя
+    marker.markerData = {
+        ...data,
+        Карта: markerLayer // Явно указываем слой
+    };
     marker.mainFilters = data.ОсновныеФильтры || ['Мои метки'];
     marker.subfilters = data.Подфильтры || [];
-    marker.isUserMarker = true; // Флаг пользовательской метки
     
-    // Добавляем обработчики событий - ВАЖНО: вызываем функцию настройки обработчиков
-    setupUserMarkerEventHandlers(marker, data);
+    // Добавляем обработчики событий
+    setupUserMarkerEventHandlers(marker, marker.markerData);
     
     // Инициализируем состояние
     marker.isTooltipActive = false;
     
-    // Добавляем в массивы
-    allMarkers.push(marker);
-    userMarkers.push(marker);
+    // Добавляем в массив слоя
+    if (!userMarkersByLayer[markerLayer]) {
+        userMarkersByLayer[markerLayer] = [];
+    }
+    userMarkersByLayer[markerLayer].push(marker);
     
-    // Добавляем в фильтры
-    data.ОсновныеФильтры.forEach(filter => {
-        if (!markersByFilter[filter]) {
-            markersByFilter[filter] = [];
+    // Добавляем в фильтры только если это текущий слой
+    if (markerLayer === currentLayer) {
+        data.ОсновныеФильтры.forEach(filter => {
+            if (!markersByFilter[filter]) {
+                markersByFilter[filter] = [];
+            }
+            markersByFilter[filter].push(marker);
+        });
+        
+        // Также добавляем подфильтры
+        data.Подфильтры.forEach(subfilter => {
+            if (!markersByFilter[subfilter]) {
+                markersByFilter[subfilter] = [];
+            }
+            markersByFilter[subfilter].push(marker);
+        });
+        
+        // Добавляем на карту если видима
+        if (shouldMarkerBeVisible(marker)) {
+            marker.addTo(map);
         }
-        markersByFilter[filter].push(marker);
-    });
-    
-    // Также добавляем подфильтры
-    data.Подфильтры.forEach(subfilter => {
-        if (!markersByFilter[subfilter]) {
-            markersByFilter[subfilter] = [];
-        }
-        markersByFilter[subfilter].push(marker);
-    });
-    
-    // Добавляем на карту если видима
-    if (shouldMarkerBeVisible(marker)) {
-        marker.addTo(map);
     }
     
     return marker;
@@ -1602,37 +2204,51 @@ function setupUserMarkerEventHandlers(marker, data) {
  * Удаление пользовательской метки
  */
 function deleteUserMarker(markerId) {
-    // Находим маркер
-    const markerIndex = userMarkers.findIndex(m => m.customId === markerId);
-    if (markerIndex === -1) return;
+    // Находим метку во всех слоях
+    let foundMarker = null;
+    let foundLayer = null;
+    let markerIndex = -1;
     
-    const marker = userMarkers[markerIndex];
-    
-    // Удаляем с карты
-    if (map.hasLayer(marker)) {
-        map.removeLayer(marker);
-    }
-    
-    // Удаляем из всех массивов
-    userMarkers.splice(markerIndex, 1);
-    
-    const allMarkerIndex = allMarkers.findIndex(m => m.customId === markerId);
-    if (allMarkerIndex !== -1) {
-        allMarkers.splice(allMarkerIndex, 1);
-    }
-    
-    // Удаляем из фильтров
-    marker.mainFilters.forEach(filter => {
-        if (markersByFilter[filter]) {
-            const filterIndex = markersByFilter[filter].findIndex(m => m.customId === markerId);
-            if (filterIndex !== -1) {
-                markersByFilter[filter].splice(filterIndex, 1);
-            }
+    for (const layerId in userMarkersByLayer) {
+        const layerMarkers = userMarkersByLayer[layerId];
+        if (!layerMarkers) continue;
+        
+        const layerIndex = layerMarkers.findIndex(m => m.customId === markerId);
+        if (layerIndex !== -1) {
+            foundMarker = layerMarkers[layerIndex];
+            foundLayer = layerId;
+            markerIndex = layerIndex;
+            break;
         }
-    });
+    }
+    
+    if (!foundMarker) return;
+    
+    // Удаляем с карты если виден
+    if (map.hasLayer(foundMarker)) {
+        map.removeLayer(foundMarker);
+    }
+    
+    // Удаляем из массива слоя
+    userMarkersByLayer[foundLayer].splice(markerIndex, 1);
+    
+    // Удаляем из фильтров (только если это текущий слой)
+    if (foundLayer === currentLayer) {
+        foundMarker.mainFilters.forEach(filter => {
+            if (markersByFilter[filter]) {
+                const filterIndex = markersByFilter[filter].findIndex(m => m.customId === markerId);
+                if (filterIndex !== -1) {
+                    markersByFilter[filter].splice(filterIndex, 1);
+                }
+            }
+        });
+    }
     
     // Удаляем состояние "отмечено"
-    if (markedMarkers[markerId]) {
+    if (markedMarkersByLayer[foundLayer] && markedMarkersByLayer[foundLayer][markerId]) {
+        delete markedMarkersByLayer[foundLayer][markerId];
+    }
+    if (foundLayer === currentLayer && markedMarkers[markerId]) {
         delete markedMarkers[markerId];
     }
     
@@ -1640,7 +2256,7 @@ function deleteUserMarker(markerId) {
     saveUserMarkers();
     saveMarkedMarkers();
     
-    console.log(`Пользовательская метка ${markerId} удалена`);
+    console.log(`Пользовательская метка ${markerId} удалена из слоя ${foundLayer}`);
 }
 
 /**
@@ -1651,18 +2267,29 @@ function cleanupGhostMarkedMarkers() {
     
     let cleanupCount = 0;
     
-    // Проходим по всем отмеченным маркерам
-    Object.keys(markedMarkers).forEach(markerId => {
-        // Ищем маркер во всех источниках
-        const inAllMarkers = allMarkers.some(m => m.customId === markerId);
-        const inUserMarkers = userMarkers.some(m => m.customId === markerId);
+    // Проходим по всем слоям
+    layersConfig.forEach(layer => {
+        const layerMarkedMarkers = markedMarkersByLayer[layer.id];
+        if (!layerMarkedMarkers) return;
         
-        // Если маркер не найден нигде - удаляем запись
-        if (!inAllMarkers && !inUserMarkers) {
-            delete markedMarkers[markerId];
-            cleanupCount++;
-            console.log(`Удалена запись об удаленной метке: ${markerId}`);
-        }
+        // Получаем все маркеры слоя
+        const allLayerMarkers = getAllMarkersForLayer(layer.id);
+        
+        // Проходим по всем отмеченным маркерам слоя
+        Object.keys(layerMarkedMarkers).forEach(markerId => {
+            // Ищем маркер в маркерах слоя
+            const markerExists = allLayerMarkers.some(m => m.customId === markerId);
+            
+            // Если маркер не найден - удаляем запись
+            if (!markerExists) {
+                delete layerMarkedMarkers[markerId];
+                cleanupCount++;
+                console.log(`Удалена запись об удаленной метке: ${markerId} слоя ${layer.id}`);
+            }
+        });
+        
+        // Сохраняем обновленный слой
+        markedMarkersByLayer[layer.id] = layerMarkedMarkers;
     });
     
     if (cleanupCount > 0) {
@@ -1679,6 +2306,31 @@ function cleanupGhostMarkedMarkers() {
  * Диалог создания новой метки
  */
 function createMarkerDialog(latlng) {
+    // Собираем все доступные фильтры и подфильтры
+    const allAvailableFilters = new Set();
+    const filtersTree = {}; // Дерево фильтров: {фильтр: [подфильтры]}
+    
+    // Основные фильтры (кроме "Мои метки")
+    filtersConfig.forEach(filter => {
+        if (!filter.special && filter.name !== 'Мои метки') {
+            allAvailableFilters.add(filter.name);
+            filtersTree[filter.name] = [];
+        }
+    });
+    
+    // Подфильтры
+    Object.entries(subfilters).forEach(([parent, subfilterList]) => {
+        if (filtersTree[parent]) { // Если родительский фильтр существует
+            filtersTree[parent] = subfilterList;
+            subfilterList.forEach(subfilter => {
+                allAvailableFilters.add(subfilter);
+            });
+        }
+    });
+    
+    // Преобразуем в массив и сортируем
+    const sortedFilters = Array.from(allAvailableFilters).sort();
+    
     // Создаем модальное окно
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -1701,12 +2353,15 @@ function createMarkerDialog(latlng) {
         border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 10px;
         padding: 20px;
-        width: 500px;
-        max-width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
+        width: 800px;
+        max-width: 95%;
+        max-height: 90vh;
+        overflow: hidden;
         color: white;
         box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        position: relative;
+        display: flex;
+        flex-direction: column;
     `;
     
     dialog.innerHTML = `
@@ -1715,43 +2370,103 @@ function createMarkerDialog(latlng) {
             Координаты: [${Math.round(latlng.lng)}, ${Math.round(latlng.lat)}]
         </div>
         
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
-                Название <span style="color: #ff5757;">*</span>
-            </label>
-            <input type="text" id="marker-name" 
-                   style="width: 96%; padding: 10px; background: rgba(255,255,255,0.1); 
-                          border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
-                          color: white; font-size: 14px;" 
-                   placeholder="Введите название метки" autofocus>
-        </div>
-        
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
-                Фильтры (для экспорта)
-            </label>
-            <input type="text" id="marker-filters" 
-                   style="width: 96%; padding: 10px; background: rgba(255,255,255,0.1); 
-                          border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
-                          color: white; font-size: 14px;" 
-                   placeholder="Например: Сундуки; Ловкость">
-            <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
-                Разделяйте фильтры точкой с запятой. Все созданные метки считаются только как "Мои метки"!
+        <div style="display: flex; gap: 20px; flex: 1; min-height: 400px;">
+            <!-- Левая панель: дерево фильтров -->
+            <div style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(255, 255, 255, 0.1); padding-right: 20px;">
+                <label style="display: block; margin-bottom: 10px; color: #ddd; font-size: 14px; font-weight: bold;">
+                    📋 Все фильтры
+                </label>
+                <div id="filters-tree" style="
+                    flex: 1;
+                    overflow-y: auto;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 8px;
+                    padding: 10px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                ">
+                    <!-- Дерево фильтров будет здесь -->
+                </div>
+                <div style="font-size: 11px; color: #aaa; margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                    <strong>💡 Подсказка:</strong> Нажмите на фильтр или подфильтр, чтобы добавить его к метке
+                </div>
+            </div>
+            
+            <!-- Правая панель: форма создания метки -->
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
+                        Название <span style="color: #ff5757;">*</span>
+                    </label>
+                    <input type="text" id="marker-name" 
+                           style="width: 95%; padding: 10px; background: rgba(255,255,255,0.1); 
+                                  border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
+                                  color: white; font-size: 14px;" 
+                           placeholder="Введите название метки" autofocus>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
+                        Фильтры (для экспорта)
+                    </label>
+                    
+                    <!-- Чипсы выбранных фильтров -->
+                    <div id="filter-chips-container" style="
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 6px;
+                        margin-bottom: 10px;
+                        min-height: 40px;
+                        padding: 8px;
+                        background: rgba(0, 0, 0, 0.2);
+                        border-radius: 5px;
+                        border: 1px dashed rgba(255, 255, 255, 0.1);
+                    "></div>
+                    
+                    <!-- Поиск фильтров -->
+                    <div style="position: relative; margin-bottom: 10px;">
+                        <input type="text" id="filter-search" 
+                               style="width: 95%; padding: 8px 12px; background: rgba(255,255,255,0.1); 
+                                      border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
+                                      color: white; font-size: 13px;" 
+                               placeholder="Поиск фильтров...">
+                        <div id="search-results" style="
+                            position: absolute;
+                            top: 100%;
+                            left: 0;
+                            right: 0;
+                            background: rgba(40, 44, 52, 0.98);
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                            border-radius: 5px;
+                            margin-top: 2px;
+                            max-height: 200px;
+                            overflow-y: auto;
+                            display: none;
+                            z-index: 10000;
+                            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                        "></div>
+                    </div>
+                    
+                    <div style="font-size: 11px; color: #aaa; margin-top: 5px; line-height: 1.4;">
+                        <strong>Информация:</strong><br>
+                        • Выберите фильтры из дерева слева или используйте поиск<br>
+                        • Все созданные метки считаются как <span style="color: #4CAF50; font-weight: bold;">"Мои метки"</span>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 20px; flex: 1;">
+                    <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
+                        Комментарий
+                    </label>
+                    <textarea id="marker-comment" 
+                              style="width: 95%; height: 100%; min-height: 120px; padding: 10px; background: rgba(255,255,255,0.1); 
+                                     border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
+                                     color: white; font-size: 14px; resize: vertical;" 
+                              placeholder="Дополнительная информация (необязательно). Ставьте <br> для новой строки."></textarea>
+                </div>
             </div>
         </div>
         
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
-                Комментарий
-            </label>
-            <textarea id="marker-comment" 
-                      style="width: 96%; padding: 10px; background: rgba(255,255,255,0.1); 
-                             border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
-                             color: white; font-size: 14px; height: 80px; resize: vertical;" 
-                      placeholder="Дополнительная информация (необязательно). Ставьте <br> для новой строки."></textarea>
-        </div>
-        
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
             <button id="cancel-marker" style="
                 padding: 10px 20px;
                 background: rgba(255, 87, 87, 0.1);
@@ -1779,17 +2494,424 @@ function createMarkerDialog(latlng) {
     modal.appendChild(dialog);
     document.body.appendChild(modal);
     
+    // Элементы
+    const nameInput = dialog.querySelector('#marker-name');
+    const filterSearch = dialog.querySelector('#filter-search');
+    const searchResults = dialog.querySelector('#search-results');
+    const filterChipsContainer = dialog.querySelector('#filter-chips-container');
+    const filtersTreeContainer = dialog.querySelector('#filters-tree');
+    
+    // Массив выбранных фильтров
+    let selectedFilters = [];
+    
+    // Функция для создания элемента дерева фильтров
+    function createFilterTreeItem(filterName, isSubfilter = false, parentName = '') {
+        const item = document.createElement('div');
+        item.className = 'filter-tree-item';
+        item.dataset.filterName = filterName;
+        item.dataset.isSubfilter = isSubfilter;
+        if (parentName) item.dataset.parentName = parentName;
+        
+        item.style.cssText = `
+            padding: ${isSubfilter ? '6px 12px 6px 30px' : '8px 12px'};
+            margin: ${isSubfilter ? '2px 0' : '4px 0'};
+            cursor: pointer;
+            font-size: ${isSubfilter ? '12px' : '13px'};
+            color: ${isSubfilter ? 'rgba(208, 208, 208, 0.9)' : '#d0d0d0'};
+            background: ${selectedFilters.includes(filterName) ? 'rgba(76, 175, 80, 0.15)' : 'transparent'};
+            border: 1px solid ${selectedFilters.includes(filterName) ? 'rgba(76, 175, 80, 0.3)' : 'transparent'};
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        `;
+        
+        // Текст фильтра
+        const textSpan = document.createElement('span');
+        textSpan.textContent = filterName;
+        
+        // Иконка статуса
+        const statusIcon = document.createElement('span');
+        statusIcon.innerHTML = selectedFilters.includes(filterName) ? '✓' : '+';
+        statusIcon.style.cssText = `
+            color: ${selectedFilters.includes(filterName) ? '#4CAF50' : 'rgba(255, 255, 255, 0.3)'};
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 8px;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: ${selectedFilters.includes(filterName) ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
+            transition: all 0.2s ease;
+        `;
+        
+        item.appendChild(textSpan);
+        item.appendChild(statusIcon);
+        
+        // Эффекты при наведении
+        item.addEventListener('mouseover', () => {
+            item.style.background = selectedFilters.includes(filterName) 
+                ? 'rgba(76, 175, 80, 0.25)' 
+                : 'rgba(255, 255, 255, 0.1)';
+            item.style.borderColor = selectedFilters.includes(filterName)
+                ? 'rgba(76, 175, 80, 0.5)'
+                : 'rgba(255, 255, 255, 0.2)';
+            statusIcon.style.background = selectedFilters.includes(filterName)
+                ? 'rgba(76, 175, 80, 0.3)'
+                : 'rgba(255, 255, 255, 0.1)';
+        });
+        
+        item.addEventListener('mouseout', () => {
+            item.style.background = selectedFilters.includes(filterName) 
+                ? 'rgba(76, 175, 80, 0.15)' 
+                : 'transparent';
+            item.style.borderColor = selectedFilters.includes(filterName)
+                ? 'rgba(76, 175, 80, 0.3)'
+                : 'transparent';
+            statusIcon.style.background = selectedFilters.includes(filterName)
+                ? 'rgba(76, 175, 80, 0.2)'
+                : 'rgba(255, 255, 255, 0.05)';
+        });
+        
+        // Обработчик клика
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFilter(filterName);
+        });
+        
+        return item;
+    }
+    
+    // Функция для построения дерева фильтров
+    function buildFilterTree() {
+        filtersTreeContainer.innerHTML = '';
+        
+        // Сортируем фильтры по алфавиту
+        const sortedMainFilters = Object.keys(filtersTree).sort();
+        
+        sortedMainFilters.forEach(mainFilter => {
+            // Основной фильтр
+            const mainFilterItem = createFilterTreeItem(mainFilter, false);
+            filtersTreeContainer.appendChild(mainFilterItem);
+            
+            // Подфильтры (если есть)
+            const subfilters = filtersTree[mainFilter];
+            if (subfilters && subfilters.length > 0) {
+                subfilters.sort().forEach(subfilter => {
+                    const subfilterItem = createFilterTreeItem(subfilter, true, mainFilter);
+                    filtersTreeContainer.appendChild(subfilterItem);
+                });
+                
+                // Добавляем разделитель между группами фильтров
+                if (sortedMainFilters.indexOf(mainFilter) !== sortedMainFilters.length - 1) {
+                    const separator = document.createElement('div');
+                    separator.style.cssText = `
+                        height: 1px;
+                        background: rgba(255, 255, 255, 0.05);
+                        margin: 10px 0;
+                    `;
+                    filtersTreeContainer.appendChild(separator);
+                }
+            }
+        });
+    }
+    
+    // Функция для создания чипса фильтра
+    function createFilterChip(filterName) {
+        const chip = document.createElement('div');
+        chip.className = 'filter-chip';
+        chip.style.cssText = `
+            display: inline-flex;
+            align-items: center;
+            background: rgba(76, 175, 80, 0.15);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 16px;
+            padding: 4px 10px 4px 12px;
+            font-size: 12px;
+            color: #4CAF50;
+            cursor: default;
+            transition: all 0.2s ease;
+            user-select: none;
+        `;
+        
+        // Текст фильтра
+        const chipText = document.createElement('span');
+        chipText.textContent = filterName;
+        chipText.style.marginRight = '6px';
+        
+        // Кнопка удаления
+        const removeBtn = document.createElement('span');
+        removeBtn.innerHTML = '✕';
+        removeBtn.className = 'remove-filter-chip';
+        removeBtn.style.cssText = `
+            cursor: pointer;
+            font-size: 14px;
+            color: rgba(255, 87, 87, 0.7);
+            margin-left: 2px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        `;
+        
+        // Обработчики для чипса
+        chip.addEventListener('mouseover', () => {
+            chip.style.background = 'rgba(76, 175, 80, 0.25)';
+            chip.style.borderColor = '#4CAF50';
+            removeBtn.style.color = '#ff5757';
+            removeBtn.style.background = 'rgba(255, 87, 87, 0.1)';
+        });
+        
+        chip.addEventListener('mouseout', () => {
+            chip.style.background = 'rgba(76, 175, 80, 0.15)';
+            chip.style.borderColor = 'rgba(76, 175, 80, 0.3)';
+            removeBtn.style.color = 'rgba(255, 87, 87, 0.7)';
+            removeBtn.style.background = 'transparent';
+        });
+        
+        // Обработчик удаления
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFilter(filterName);
+        });
+        
+        chip.appendChild(chipText);
+        chip.appendChild(removeBtn);
+        
+        return chip;
+    }
+    
+    // Функция для обновления отображения чипсов
+    function updateFilterChips() {
+        // Очищаем контейнер
+        filterChipsContainer.innerHTML = '';
+        
+        // Если нет выбранных фильтров, показываем заглушку
+        if (selectedFilters.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.textContent = 'Нет выбранных фильтров';
+            placeholder.style.cssText = `
+                color: rgba(255, 255, 255, 0.3);
+                font-size: 12px;
+                font-style: italic;
+                padding: 12px;
+                width: 100%;
+                text-align: center;
+            `;
+            filterChipsContainer.appendChild(placeholder);
+        } else {
+            // Добавляем чипсы
+            selectedFilters.forEach(filter => {
+                const chip = createFilterChip(filter);
+                filterChipsContainer.appendChild(chip);
+            });
+        }
+    }
+    
+    // Функция переключения фильтра
+    function toggleFilter(filterName) {
+        const index = selectedFilters.indexOf(filterName);
+        
+        if (index !== -1) {
+            // Удаляем фильтр
+            selectedFilters.splice(index, 1);
+        } else {
+            // Добавляем фильтр
+            selectedFilters.push(filterName);
+        }
+        
+        // Обновляем отображение
+        updateFilterChips();
+        buildFilterTree();
+    }
+    
+    // Функция поиска фильтров
+    function searchFilters(query) {
+        searchResults.innerHTML = '';
+        
+        if (!query.trim()) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        const queryLower = query.toLowerCase();
+        const results = [];
+        
+        // Ищем в основных фильтрах
+        Object.keys(filtersTree).forEach(mainFilter => {
+            if (mainFilter.toLowerCase().includes(queryLower) && !selectedFilters.includes(mainFilter)) {
+                results.push({ name: mainFilter, type: 'main' });
+            }
+            
+            // Ищем в подфильтрах
+            const subfilters = filtersTree[mainFilter];
+            if (subfilters) {
+                subfilters.forEach(subfilter => {
+                    if (subfilter.toLowerCase().includes(queryLower) && !selectedFilters.includes(subfilter)) {
+                        results.push({ name: subfilter, type: 'sub', parent: mainFilter });
+                    }
+                });
+            }
+        });
+        
+        if (results.length === 0) {
+            searchResults.innerHTML = `
+                <div style="padding: 10px; color: #aaa; font-size: 12px; text-align: center;">
+                    Фильтры не найдены
+                </div>
+            `;
+            searchResults.style.display = 'block';
+            return;
+        }
+        
+        // Группируем результаты
+        const groupedResults = {};
+        results.forEach(result => {
+            const group = result.type === 'main' ? 'Основные фильтры' : `Подфильтры (${result.parent})`;
+            if (!groupedResults[group]) {
+                groupedResults[group] = [];
+            }
+            groupedResults[group].push(result);
+        });
+        
+        // Создаем элементы результатов
+        Object.keys(groupedResults).sort().forEach(group => {
+            // Заголовок группы
+            const groupHeader = document.createElement('div');
+            groupHeader.style.cssText = `
+                padding: 6px 12px;
+                background: rgba(0, 0, 0, 0.3);
+                color: rgba(255, 255, 255, 0.5);
+                font-size: 11px;
+                font-weight: bold;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            `;
+            groupHeader.textContent = group;
+            searchResults.appendChild(groupHeader);
+            
+            // Элементы группы
+            groupedResults[group].forEach(result => {
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #d0d0d0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                    transition: all 0.2s ease;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                `;
+                
+                // Текст с подсветкой
+                const textSpan = document.createElement('span');
+                const filterName = result.name;
+                const lowerName = filterName.toLowerCase();
+                const index = lowerName.indexOf(queryLower);
+                
+                if (index !== -1) {
+                    const before = filterName.substring(0, index);
+                    const match = filterName.substring(index, index + query.length);
+                    const after = filterName.substring(index + query.length);
+                    textSpan.innerHTML = `${before}<span style="color: #4CAF50; font-weight: bold;">${match}</span>${after}`;
+                } else {
+                    textSpan.textContent = filterName;
+                }
+                
+                // Иконка добавления
+                const addIcon = document.createElement('span');
+                addIcon.innerHTML = '+';
+                addIcon.style.cssText = `
+                    color: rgba(76, 175, 80, 0.7);
+                    font-size: 16px;
+                    font-weight: bold;
+                    margin-left: 8px;
+                `;
+                
+                item.appendChild(textSpan);
+                item.appendChild(addIcon);
+                
+                // Эффекты при наведении
+                item.addEventListener('mouseover', () => {
+                    item.style.background = 'rgba(76, 175, 80, 0.15)';
+                    item.style.color = '#4CAF50';
+                    addIcon.style.color = '#4CAF50';
+                });
+                
+                item.addEventListener('mouseout', () => {
+                    item.style.background = 'transparent';
+                    item.style.color = '#d0d0d0';
+                    addIcon.style.color = 'rgba(76, 175, 80, 0.7)';
+                });
+                
+                // Обработчик клика
+                item.addEventListener('click', () => {
+                    toggleFilter(result.name);
+                    filterSearch.value = '';
+                    searchResults.style.display = 'none';
+                });
+                
+                searchResults.appendChild(item);
+            });
+        });
+        
+        searchResults.style.display = 'block';
+    }
+    
+    // Обработчик поиска
+    let searchTimeout;
+    filterSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            searchFilters(this.value);
+        }, 200);
+    });
+    
+    // Скрываем результаты поиска при клике вне
+    document.addEventListener('click', function(e) {
+        if (!searchResults.contains(e.target) && e.target !== filterSearch) {
+            searchResults.style.display = 'none';
+        }
+    });
+    
+    // Обработчики клавиш для поиска
+    filterSearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            searchResults.style.display = 'none';
+            this.value = '';
+        }
+        if (e.key === 'Enter' && searchResults.style.display === 'block') {
+            const firstResult = searchResults.querySelector('div:not([style*="background: rgba(0, 0, 0, 0.3)"])');
+            if (firstResult) {
+                firstResult.click();
+                e.preventDefault();
+            }
+        }
+    });
+    
+    // Инициализация
+    buildFilterTree();
+    updateFilterChips();
+    
     // Обработчики кнопок
     dialog.querySelector('#cancel-marker').onclick = function() {
         document.body.removeChild(modal);
     };
     
     dialog.querySelector('#save-marker').onclick = function() {
-        const nameInput = dialog.querySelector('#marker-name');
-        const filtersInput = dialog.querySelector('#marker-filters');
-        const commentInput = dialog.querySelector('#marker-comment');
-        
         const name = nameInput.value.trim();
+        const comment = dialog.querySelector('#marker-comment').value.trim();
         
         if (!name) {
             alert('Пожалуйста, введите название метки');
@@ -1797,26 +2919,52 @@ function createMarkerDialog(latlng) {
             return;
         }
         
-        // Парсим фильтры
-        const filtersText = filtersInput.value.trim();
-        let filtersArray = ['Мои метки']; // Всегда добавляем "Мои метки"
+        // Формируем массив фильтров
+        let filtersArray = ['Мои метки']; // Всегда добавляем "Мои метки" первым
         
-        if (filtersText) {
-            const customFilters = filtersText.split(';')
-                .map(f => f.trim())
-                .filter(f => f && f !== 'Мои метки');
-            filtersArray = [...filtersArray, ...customFilters];
+        // Добавляем выбранные фильтры
+        if (selectedFilters.length > 0) {
+            filtersArray = [...filtersArray, ...selectedFilters];
         }
         
-        // Создаем данные маркера
+        // Определяем подфильтры
+        const subfiltersArray = selectedFilters.filter(filter => {
+            for (const parent in subfilters) {
+                if (subfilters[parent].includes(filter)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+        
+        // Определяем основные фильтры (включая "Мои метки")
+        const mainFiltersArray = ['Мои метки']; // Всегда добавляем "Мои метки"
+        
+        selectedFilters.forEach(filter => {
+            // Если это не подфильтр, то это основной фильтр
+            let isSubfilter = false;
+            for (const parent in subfilters) {
+                if (subfilters[parent].includes(filter)) {
+                    isSubfilter = true;
+                    break;
+                }
+            }
+            
+            if (!isSubfilter) {
+                mainFiltersArray.push(filter);
+            }
+        });
+        
+        // Создаем данные маркера с указанием текущего слоя
         const markerData = {
             Название: name,
-            ОсновныеФильтры: ['Мои метки'],
-            Подфильтры: [],
+            ОсновныеФильтры: mainFiltersArray,
+            Подфильтры: subfiltersArray,
             ВсеФильтрыВПорядке: filtersArray,
             X: Math.round(latlng.lng),
             Y: Math.round(latlng.lat),
-            Комментарий: commentInput.value.trim() || ''
+            Комментарий: comment || '',
+            Карта: currentLayer // Явно указываем текущий слой
         };
         
         // Создаем маркер
@@ -1875,10 +3023,13 @@ function updateCreateModeCursor() {
 }
 
 /**
- * Экспорт пользовательских меток в CSV файл
+ * Экспорт пользовательских меток в JSON файл
  */
-function exportUserMarkersToCSV() {
-    if (userMarkers.length === 0) {
+function exportUserMarkersToJSON() {
+    // Получаем пользовательские метки текущего слоя
+    const currentUserMarkers = userMarkersByLayer[currentLayer] || [];
+    
+    if (currentUserMarkers.length === 0) {
         alert('Нет пользовательских меток для экспорта');
         return;
     }
@@ -1914,14 +3065,15 @@ function exportUserMarkersToCSV() {
     dialog.innerHTML = `
         <h3 style="margin-top: 0; color: #4CAF50; text-align: center;">Экспорт пользовательских меток</h3>
         <div style="margin-bottom: 15px; font-size: 13px; color: #aaa; text-align: center;">
-            Всего меток для экспорта: <strong style="color: white;">${userMarkers.length}</strong>
+            Текущий слой: <strong style="color: white;">${getCurrentLayerName()}</strong><br>
+            Всего меток для экспорта: <strong style="color: white;">${currentUserMarkers.length}</strong>
         </div>
         <div style="margin-bottom: 20px; font-size: 12px; color: #aaa; text-align: center;">
             Выберите действие для экспорта ваших меток
         </div>
         
         <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-            <!-- Зеленая кнопка - Экспортировать CSV -->
+            <!-- Зеленая кнопка - Экспортировать JSON -->
             <button id="export-only-btn" style="
                 padding: 12px 20px;
                 background: rgba(76, 175, 80, 0.15);
@@ -1938,11 +3090,11 @@ function exportUserMarkersToCSV() {
                 transition: all 0.2s ease;
             ">
                 <span style="font-size: 16px;">📁</span>
-                Экспортировать CSV
+                Экспортировать JSON
             </button>
             
             <div style="font-size: 11px; color: #aaa; text-align: center; margin: 0 10px;">
-                Экспортирует все метки в CSV файл без удаления
+                Экспортирует метки текущего слоя в JSON файл без удаления
             </div>
             
             <!-- Желтая кнопка - Экспортировать и удалить -->
@@ -1966,7 +3118,7 @@ function exportUserMarkersToCSV() {
             </button>
             
             <div style="font-size: 11px; color: #ff9800; text-align: center; margin: 0 10px;">
-                Экспортирует метки и затем удаляет их с карты
+                Экспортирует метки текущего слоя в JSON и затем удаляет их с карты
             </div>
         </div>
         
@@ -2022,54 +3174,84 @@ function exportUserMarkersToCSV() {
         this.style.borderColor = 'rgba(255, 255, 255, 0.2)';
     });
     
-    // Функция для экспорта CSV
-    const performCSVExport = (shouldDelete = false) => {
-        // Начинаем с заголовков CSV
-        let csvContent = "";
-        
-        // Добавляем данные каждой метки
-        userMarkers.forEach(marker => {
+    // Функция для экспорта JSON (обновленная для работы с currentUserMarkers)
+    const performJSONExport = (shouldDelete = false, formatted = false) => {
+        // Обрабатываем каждую метку текущего слоя
+        const markersData = currentUserMarkers.map(marker => {
             const data = marker.markerData;
+            const markerId = `${data.X}_${data.Y}_${data.Название.replace(/\s+/g, '_')}`;
+            const allFilters = data.ВсеФильтрыВПорядке || [];
+            const filteredFilters = allFilters.filter(filter => filter !== 'Мои метки');
+            let iconfilter = '';
+            if (filteredFilters.length > 0) {
+                iconfilter = filteredFilters[0];
+            } 
+            // Разделяем на фильтры и подфильтры
+            const filters = [];
+            const newsubfilters = [];
             
-            // Экранируем кавычки и запятые в тексте
-            const escapeCSV = (text) => {
-                if (!text) return '';
-                // Если текст содержит кавычки, запятые или переносы строк, обрамляем кавычками
-                if (text.includes('"') || text.includes(',') || text.includes('\n')) {
-                    return '"' + text.replace(/"/g, '""') + '"';
+            filteredFilters.forEach(filterName => {
+                let isSubfilter = false;
+                for (const [parentFilter, subfilterList] of Object.entries(subfilters)) {
+                    if (subfilterList.includes(filterName)) {
+                        newsubfilters.push(filterName);
+                        isSubfilter = true;
+                        
+                        if (!filters.includes(parentFilter)) {
+                            filters.push(parentFilter);
+                        }
+                        break;
+                    }
                 }
-                return text;
+                if (!isSubfilter && filterName !== 'Мои метки' && !filters.includes(filterName)) {
+                    filters.push(filterName);
+                }
+            });
+            
+            // Создаем объект метки
+            return {
+                ID: markerId,
+                Название: data.Название,
+                Иконка: iconfilter,
+                Подфильтры: newsubfilters,
+                ОсновныеФильтры: filters,
+                X: data.X,
+                Y: data.Y,
+                Комментарий: data.Комментарий || '',
+                Карта: data.Карта || currentLayer
             };
-            
-            // Получаем фильтры (только те, что были указаны при создании)
-            // Убираем "Мои метки" из списка фильтров для экспорта
-            const filtersForExport = data.ВсеФильтрыВПорядке 
-                ? data.ВсеФильтрыВПорядке
-                    .filter(filter => filter !== 'Мои метки')
-                    .join(';')
-                : '';
-            
-            // Создаем строку для CSV
-            const csvRow = [
-                escapeCSV(data.Название),
-                escapeCSV(filtersForExport),
-                data.X,
-                data.Y,
-                escapeCSV(data.Комментарий || '')
-            ].join(',');
-            
-            // Добавляем строку к общему содержимому
-            csvContent += csvRow + "\n";
         });
         
+        // Создаем финальный JSON объект
+        const exportData = markersData;
+        
+        // Конвертируем в JSON строку
+        let jsonContent;
+        if (formatted) {
+            // Красивое форматирование с отступами
+            jsonContent = JSON.stringify(exportData, null, 2);
+        } else {
+            // Компактный JSON (меньше размер)
+            jsonContent = JSON.stringify(exportData);
+        }
+        
         // Создаем Blob и ссылку для скачивания
-        const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([jsonContent], { 
+            type: 'application/json;charset=utf-8' 
+        });
         const url = URL.createObjectURL(blob);
         
         // Создаем временную ссылку для скачивания
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `мои_метки_${new Date().toISOString().slice(0, 10)}.csv`);
+        
+        // Генерируем имя файла с датой и именем слоя
+        const date = new Date();
+        const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+        const timeStr = date.getHours().toString().padStart(2, '0') + 
+                       date.getMinutes().toString().padStart(2, '0');
+        const layerName = getCurrentLayerName().replace(/\s+/g, '_');
+        link.setAttribute('download', `мои_метки_${layerName}_${dateStr}_${timeStr}.json`);
         link.style.display = 'none';
         
         document.body.appendChild(link);
@@ -2082,45 +3264,50 @@ function exportUserMarkersToCSV() {
         // Если нужно удалить метки после экспорта
         if (shouldDelete) {
             // Запоминаем количество меток для сообщения
-            const markersCount = userMarkers.length;
+            const markersCount = currentUserMarkers.length;
             
-            // Удаляем все пользовательские метки
-            while (userMarkers.length > 0) {
-                const marker = userMarkers[0];
-                deleteUserMarker(marker.customId);
+            // Подтверждение для удаления
+            if (confirm(`Вы уверены, что хотите удалить ${markersCount} меток текущего слоя после экспорта? Это действие нельзя отменить.`)) {
+                // Удаляем все пользовательские метки текущего слоя
+                // Создаем копию массива, так как оригинальный будет изменяться
+                const markersToDelete = [...currentUserMarkers];
+                
+                markersToDelete.forEach(marker => {
+                    deleteUserMarker(marker.customId);
+                });
+                
+                // Обновляем видимость
+                updateAllMarkersVisibility();
+                
+                // Сохраняем изменения
+                saveUserMarkers();
+                
+                console.log(`Экспортировано и удалено ${markersCount} меток слоя ${currentLayer}`);
+                setTimeout(() => {
+                    alert(`Экспортировано и удалено ${markersCount} меток слоя ${getCurrentLayerName()}`);
+                }, 300);
             }
-            
-            // Обновляем видимость
-            updateAllMarkersVisibility();
-            
-            // Сохраняем изменения
-            saveUserMarkers();
-            
-            console.log(`Экспортировано и удалено ${markersCount} меток`);
-            setTimeout(() => {
-                alert(`Экспортировано и удалено ${markersCount} меток`);
-            }, 300);
         } else {
-            console.log(`Экспортировано ${userMarkers.length} меток в CSV`);
+            const formatText = formatted ? ' (форматированный)' : '';
+            const layerName = getCurrentLayerName();
+            console.log(`Экспортировано ${currentUserMarkers.length} меток слоя ${currentLayer} в JSON${formatText}`);
             setTimeout(() => {
-                alert(`Экспортировано ${userMarkers.length} меток в файл мои_метки.csv`);
+                alert(`Экспортировано ${currentUserMarkers.length} меток слоя "${layerName}" в файл JSON${formatText}`);
             }, 300);
         }
     };
     
     // Обработчики кнопок
     exportOnlyBtn.onclick = function() {
-        // Просто экспорт без удаления
-        performCSVExport(false);
+        // Просто экспорт JSON без удаления (компактный)
+        performJSONExport(false, false);
         document.body.removeChild(modal);
     };
     
     exportDeleteBtn.onclick = function() {
-        // Подтверждение для удаления
-        if (confirm(`Вы уверены, что хотите экспортировать и удалить ВСЕ пользовательские метки? Это действие нельзя отменить.`)) {
-            performCSVExport(true);
-            document.body.removeChild(modal);
-        }
+        // Экспорт JSON с удалением (компактный)
+        performJSONExport(true, false);
+        document.body.removeChild(modal);
     };
     
     cancelBtn.onclick = function() {
@@ -2135,6 +3322,14 @@ function exportUserMarkersToCSV() {
         }
     };
     document.addEventListener('keydown', closeHandler);
+}
+
+/**
+ * Получить отображаемое имя текущего слоя
+ */
+function getCurrentLayerName() {
+    const layerConfig = layersConfig.find(l => l.id === currentLayer);
+    return layerConfig ? layerConfig.name : currentLayer;
 }
 
 // ============================================
@@ -2675,9 +3870,7 @@ const ToolsControl = L.Control.extend({
         });
         
         clearAllButton.addEventListener('click', function() {
-            if (confirm('Вы уверены, что хотите снять все отметки? Это действие нельзя отменить.')) {
-                clearAllMarkedMarkers();
-            }
+            clearAllMarkedMarkers();
             L.DomEvent.stopPropagation(this);
         });
 
@@ -2685,8 +3878,8 @@ const ToolsControl = L.Control.extend({
         const exportGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
 
         const exportButton = L.DomUtil.create('div', 'tool-button', exportGroup);
-        exportButton.textContent = "Экспортировать мои метки";
-        exportButton.title = "Экспортировать все мои метки в CSV файл";
+        exportButton.textContent = "Экспортировать метки";
+        exportButton.title = "Экспортировать все мои метки в JSON файл";
         exportButton.style.cssText = `
             width: 85%;
             padding: 8px 12px;
@@ -2714,7 +3907,7 @@ const ToolsControl = L.Control.extend({
         });
 
         exportButton.addEventListener('click', function() {
-            exportUserMarkersToCSV();
+            exportUserMarkersToJSON();
             L.DomEvent.stopPropagation(this);
         });
         
@@ -3373,15 +4566,22 @@ function enableSpecialMarksScroll() {
 function initializeApp() {
     console.log('Инициализация приложения...');
     
-    // Загрузка сохраненных состояний
-    loadFilterStates();
-    loadSpecialMarksStates();
-    loadToolsStates();
+    // Инициализируем структуры данных для слоёв
+    initLayerDataStructures();
+    
+    // Загружаем выбранный слой
+    loadCurrentLayer();
     
     // Инициализация карты
     initMap();
     
+    // Инициализация слоёв
+    initLayers();
+    
     // Добавление контролов на карту
+    const mapSwitchControl = new MapSwitchControl();
+    mapSwitchControl.addTo(map);
+    
     const toolsControl = new ToolsControl();
     toolsControl.addTo(map);
     
@@ -3391,20 +4591,23 @@ function initializeApp() {
     const specialMarksControl = new SpecialMarksControl();
     specialMarksControl.addTo(map);
     
-    // Загрузка меток - сначала CSV
+    // Загрузка меток
     setTimeout(() => {
-        loadMarkersFromCSV();
+        loadMarkersFromJSON();
         loadMarkedMarkers();
-        // Загружаем пользовательские метки после CSV
+        // Загружаем пользовательские метки
         setTimeout(() => {
             loadUserMarkers();
             cleanupGhostMarkedMarkers();
+            
+            // Заполняем markersByFilter для текущего слоя
+            populateMarkersByFilter();
             
             // Настройка прокрутки
             setTimeout(() => {
                 enableFilterScroll();
                 enableSpecialMarksScroll();
-                enableToolsScroll(); 
+                enableToolsScroll();
                 
                 // Обновление состояний интерфейса
                 Object.keys(filterElements).forEach(filterName => {
@@ -3426,6 +4629,7 @@ function initializeApp() {
                 
                 updateAllMarkersVisibility();
                 updateAllFiltersCheckbox();
+                
                 setTimeout(() => {
                     specialMarksConfig.forEach(mark => {
                         updateSpecialMarkCheckboxState(mark.name);
@@ -3465,16 +4669,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Находим соответствующий маркер среди ВСЕХ маркеров
-            let activeMarker = allMarkers.find(marker => marker.customId === markerId);
-            
-            // Если не найдено среди всех маркеров, ищем среди пользовательских
-            if (!activeMarker) {
-                activeMarker = userMarkers.find(marker => marker.customId === markerId);
+            // Находим маркер
+            const markerInfo = findMarkerById(markerId);
+            if (!markerInfo) {
+                console.error(`Маркер с ID ${markerId} не найден`);
+                return;
             }
             
-            if (!activeMarker) {
-                console.error(`Маркер с ID ${markerId} не найден среди ${allMarkers.length} маркеров и ${userMarkers.length} пользовательских маркеров`);
+            const { marker, layer } = markerInfo;
+            
+            // Проверяем, принадлежит ли маркер текущему слою
+            if (layer !== currentLayer) {
+                console.warn(`Маркер ${markerId} принадлежит слою ${layer}, игнорируем клик`);
                 return;
             }
             
@@ -3484,8 +4690,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Обновляем состояние
             markedMarkers[markerId] = newState;
             
+            // Обновляем состояние в слое
+            if (!markedMarkersByLayer[layer]) {
+                markedMarkersByLayer[layer] = {};
+            }
+            markedMarkersByLayer[layer][markerId] = newState;
+            
             // Обновляем внешний вид маркера
-            updateMarkerAppearance(activeMarker, newState);
+            updateMarkerAppearance(marker, newState);
             
             // Обновляем чекбокс
             const checkboxElement = tooltip.querySelector('.tooltip-mark-checkbox');
@@ -3503,7 +4715,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Сохраняем состояние
             saveMarkedMarkers();
-            saveUserMarkers(); // Также сохраняем пользовательские метки
+            saveUserMarkers();
             
             return false;
         }

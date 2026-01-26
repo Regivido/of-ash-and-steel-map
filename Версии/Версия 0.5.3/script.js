@@ -103,6 +103,7 @@ function initMap() {
     
     // Добавляем изображение карты
     L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
+    map.setView([400, 400], 1);
     
     // Настраиваем контролы
     map.removeControl(map.zoomControl);

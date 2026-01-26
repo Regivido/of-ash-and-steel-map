@@ -8,6 +8,7 @@ const IMAGE_URL = 'assets/worldmap.webp';
 
 // Глобальные переменные
 let map;
+let allMarkers = [];
 let markersByFilter = {
     'Алтари': [],
     'Бижутерия': [],
@@ -59,6 +60,7 @@ let coordsEnabled = false;
 
 // Режим создания меток
 let createMarkersMode = false;
+let userMarkers = [];
 
 // Счетчик для уникальных ID пользовательских меток
 let userMarkerCounter = 0;
@@ -121,44 +123,6 @@ const specialMarksConfig = [
 
 let specialMarksStates = {};
 let specialSubmarksStates = {};
-// Конфигурация слоёв (карт)
-const layersConfig = [
-    {
-        id: 'worldmap',
-        name: 'Основной мир',
-        imageUrl: 'assets/worldmap.webp',
-        bounds: [[0, 0], [800, 800]],
-        icon: 'assets/worldmap-icon.png',
-        minZoom: 0,
-        maxZoom: 5,
-        defaultZoom: 0
-    },
-    {
-        id: 'greyshaft-city',
-        name: 'Грейшафт-Сити',
-        imageUrl: 'assets/greyshaft-city.png',
-        bounds: [[0, 0], [800, 800]],
-        icon: 'assets/greyshaft-icon.png',
-        minZoom: 0,
-        maxZoom: 3,
-        defaultZoom: 0
-    }
-];
-// Глобальные переменные для слоёв
-let currentLayer = 'worldmap';
-let layerImageOverlays = {};
-let markersByLayer = {
-    'worldmap': [],
-    'greyshaft-city': []
-};
-let userMarkersByLayer = {
-    'worldmap': [],
-    'greyshaft-city': []
-};
-let markedMarkersByLayer = {
-    'worldmap': {},
-    'greyshaft-city': {}
-};
 
 // ============================================
 // ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ КАРТЫ
@@ -168,14 +132,11 @@ let markedMarkersByLayer = {
  * Инициализация карты Leaflet
  */
 function initMap() {
-    // Получаем конфиг текущего слоя
-    const currentLayerConfig = layersConfig.find(l => l.id === currentLayer);
-    
     map = L.map('map', {
         crs: L.CRS.Simple,
-        maxBounds: currentLayerConfig ? currentLayerConfig.bounds : IMAGE_BOUNDS,
-        maxZoom: currentLayerConfig ? currentLayerConfig.maxZoom : 5,
-        minZoom: currentLayerConfig ? currentLayerConfig.minZoom : 0,
+        maxBounds: IMAGE_BOUNDS,
+        maxZoom: 5,
+        minZoom: 0,
         doubleClickZoom: false,
     });
     
@@ -183,12 +144,9 @@ function initMap() {
     map.removeControl(map.zoomControl);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Добавляем изображение карты (будет обновлено в initLayers)
+    // Добавляем изображение карты
     L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
-    
-    // Устанавливаем вид по умолчанию для текущего слоя
-    const defaultZoom = currentLayerConfig ? currentLayerConfig.defaultZoom : 0;
-    map.setView([400, 400], defaultZoom);
+    map.setView([400, 400], 1);
     
     // Инициализация иконок
     initMarkerIcons();
@@ -295,7 +253,6 @@ function setupEventListeners() {
         saveSpecialMarksStates();
         saveToolsStates();
         saveMarkedMarkers();
-        saveUserMarkers();
     });
     
     // Периодическое сохранение
@@ -305,334 +262,7 @@ function setupEventListeners() {
         saveSpecialMarksStates();
         saveToolsStates();
         saveMarkedMarkers();
-        saveUserMarkers();
     }, 30000);
-}
-
-// ============================================
-// УПРАВЛЕНИЕ СЛОЯМИ
-// ============================================
-
-/**
- * Инициализация всех слоёв
- */
-function initLayers() {
-    layersConfig.forEach(layer => {
-        // Создаем ImageOverlay для каждого слоя
-        const imageOverlay = L.imageOverlay(layer.imageUrl, layer.bounds);
-        layerImageOverlays[layer.id] = imageOverlay;
-        
-        // Скрываем все слои кроме текущего
-        if (layer.id !== currentLayer) {
-            // Просто не добавляем на карту
-        } else {
-            imageOverlay.addTo(map);
-        }
-    });
-}
-
-/**
- * Переключение на другой слой
- */
-function switchLayer(layerId) {
-    if (currentLayer === layerId) return;
-    
-    // Сохраняем состояние текущего слоя (только отмеченные метки)
-    saveCurrentLayerState();
-    
-    // Сохраняем состояние карты текущего слоя
-    saveMapState();
-    
-    // Скрываем метки текущего слоя
-    hideCurrentLayerMarkers();
-    
-    // Меняем текущий слой
-    map.setZoom(0);
-    const oldLayer = currentLayer;
-    currentLayer = layerId;
-    
-    // Очищаем markersByFilter
-    clearMarkersByFilter();
-    
-    // Обновляем изображение карты (с новыми параметрами и зумом)
-    updateMapImage();
-    
-    // Загружаем состояние нового слоя (только отмеченные метки)
-    loadLayerState(layerId);
-    
-    // Теперь заполняем markersByFilter для нового слоя
-    populateMarkersByFilter();
-    
-    // Обновляем видимость всех маркеров нового слоя
-    updateAllMarkersVisibility();
-    
-    // Сохраняем выбор слоя
-    saveCurrentLayer();
-    
-    console.log(`Переключен слой с ${oldLayer} на ${layerId}`);
-}
-
-/**
- * Обновление изображения карты при переключении слоя
- */
-function updateMapImage() {
-    // Получаем конфиг нового слоя
-    const layerConfig = layersConfig.find(l => l.id === currentLayer);
-    if (!layerConfig) return;
-    
-    // Удаляем текущий ImageOverlay
-    if (layerImageOverlays[currentLayer]) {
-        map.removeLayer(layerImageOverlays[currentLayer]);
-    }
-    
-    // Добавляем новый ImageOverlay
-    const newLayer = layerImageOverlays[currentLayer];
-    if (newLayer) {
-        newLayer.addTo(map);
-        
-        // Устанавливаем новые параметры карты
-        map.setMaxBounds(layerConfig.bounds);
-        map.setMaxZoom(layerConfig.maxZoom);
-        map.setMinZoom(layerConfig.minZoom);
-        
-        // Устанавливаем зум по умолчанию
-        map.setZoom(layerConfig.defaultZoom);
-        
-        // Центрируем карту
-        map.fitBounds(layerConfig.bounds);
-    }
-}
-
-/**
- * Контрол для кнопки переключения карты
- */
-const MapSwitchControl = L.Control.extend({
-    options: {
-        position: 'bottomright'
-    },
-    
-    onAdd: function(map) {
-        const switchButton = L.DomUtil.create('div', 'map-switch-button');
-        
-        // Создаем текстовый элемент
-        const switchText = L.DomUtil.create('div', 'map-switch-text', switchButton);
-        switchText.textContent = 'Сменить карту';
-        
-        // Обработчик клика
-        switchButton.onclick = function(e) {
-            // Находим следующий слой
-            const currentIndex = layersConfig.findIndex(l => l.id === currentLayer);
-            const nextIndex = (currentIndex + 1) % layersConfig.length;
-            const nextLayer = layersConfig[nextIndex];
-            
-            // Переключаемся на следующий слой
-            switchLayer(nextLayer.id);
-            
-            // Можно показать всплывающее сообщение на кнопке
-            switchText.textContent = 'Карта изменена';
-            setTimeout(() => {
-                switchText.textContent = 'Сменить карту';
-            }, 1000);
-            
-            L.DomEvent.stopPropagation(e);
-        };
-        
-        return switchButton;
-    }
-});
-
-/**
- * Сохранение состояния текущего слоя
- */
-function saveCurrentLayerState() {
-    
-    // Сохраняем состояние отмеченных меток текущего слоя
-    markedMarkersByLayer[currentLayer] = { ...markedMarkers };
-    
-    // Сохраняем состояние инструментов
-    saveToolsStates();
-}
-
-/**
- * Загрузка состояния слоя
- */
-function loadLayerState(layerId) {    
-    // Загружаем состояние отмеченных маркеров
-    const layerMarkedMarkers = markedMarkersByLayer[layerId];
-    if (layerMarkedMarkers) {
-        // Очищаем текущие отмеченные маркеры
-        markedMarkers = {};
-        // Копируем отмеченные маркеры из слоя
-        Object.assign(markedMarkers, layerMarkedMarkers);
-    } else {
-        markedMarkers = {};
-    }
-    
-    // Обновляем видимость маркеров нового слоя
-    updateAllMarkersVisibility();
-    
-    // Обновляем состояния UI
-    updateAllUIStates();
-}
-
-/**
- * Инициализация состояний фильтров для нового слоя
- */
-function initFilterStatesForLayer() {
-    filtersConfig.forEach(filter => {
-        if (!filter.special && !subfilters[filter.name] && filterStates[filter.name] === undefined) {
-            filterStates[filter.name] = true;
-        }
-    });
-}
-
-function initSubfilterStatesForLayer() {
-    Object.keys(subfilters).forEach(parentFilter => {
-        subfilters[parentFilter].forEach(subfilter => {
-            if (subfilterStates[subfilter] === undefined) {
-                subfilterStates[subfilter] = true;
-            }
-        });
-    });
-}
-
-function initSpecialMarksStatesForLayer() {
-    specialMarksConfig.forEach(mark => {
-        if (specialMarksStates[mark.name] === undefined) {
-            specialMarksStates[mark.name] = mark.completed;
-        }
-    });
-}
-
-function initSpecialSubmarksStatesForLayer() {
-    specialMarksConfig.forEach(mark => {
-        if (mark.hasSubmarks && mark.submarks) {
-            mark.submarks.forEach(submark => {
-                const fullName = `${mark.name} - ${submark}`;
-                if (specialSubmarksStates[fullName] === undefined) {
-                    specialSubmarksStates[fullName] = false;
-                }
-            });
-        }
-    });
-}
-
-/**
- * Обновление всех состояний UI
- */
-function updateAllUIStates() {
-    // Обновляем фильтры
-    Object.keys(filterElements).forEach(filterName => {
-        updateFilterCheckboxState(filterName);
-    });
-    
-    // Обновляем подфильтры
-    Object.keys(subfilterElements).forEach(subfilterName => {
-        const element = subfilterElements[subfilterName];
-        if (element) {
-            if (subfilterStates[subfilterName]) {
-                element.checkmark.classList.add('active');
-                element.checkbox.classList.add('active');
-            } else {
-                element.checkmark.classList.remove('active');
-                element.checkbox.classList.remove('active');
-            }
-        }
-    });
-    
-    // Обновляем особые метки
-    specialMarksConfig.forEach(mark => {
-        updateSpecialMarkCheckboxState(mark.name);
-    });
-    
-    // Обновляем чекбокс "Все фильтры"
-    updateAllFiltersCheckbox();
-}
-
-/**
- * Скрытие маркеров текущего слоя
- */
-function hideCurrentLayerMarkers() {
-    // Скрываем обычные маркеры
-    if (markersByLayer[currentLayer]) {
-        markersByLayer[currentLayer].forEach(marker => {
-            if (map.hasLayer(marker)) {
-                map.removeLayer(marker);
-            }
-        });
-    }
-    
-    // Скрываем пользовательские метки
-    if (userMarkersByLayer[currentLayer]) {
-        userMarkersByLayer[currentLayer].forEach(marker => {
-            if (map.hasLayer(marker)) {
-                map.removeLayer(marker);
-            }
-        });
-    }
-    
-    // Закрываем все тултипы
-    closeAllTooltips();
-}
-
-/**
- * Сохранение выбранного слоя
- */
-function saveCurrentLayer() {
-    localStorage.setItem('currentLayer', currentLayer);
-}
-
-/**
- * Загрузка выбранного слоя
- */
-function loadCurrentLayer() {
-    const saved = localStorage.getItem('currentLayer');
-    if (saved && layersConfig.some(l => l.id === saved)) {
-        currentLayer = saved;
-        return true;
-    }
-    return false;
-}
-
-// ============================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С МАРКЕРАМИ
-// ============================================
-
-/**
- * Получить все маркеры текущего слоя (обычные + пользовательские)
- */
-function getAllMarkersForCurrentLayer() {
-    const regularMarkers = markersByLayer[currentLayer] || [];
-    const userMarkers = userMarkersByLayer[currentLayer] || [];
-    return [...regularMarkers, ...userMarkers];
-}
-
-/**
- * Получить все маркеры по ID слоя
- */
-function getAllMarkersForLayer(layerId) {
-    const regularMarkers = markersByLayer[layerId] || [];
-    const userMarkers = userMarkersByLayer[layerId] || [];
-    return [...regularMarkers, ...userMarkers];
-}
-
-/**
- * Найти маркер по ID во всех слоях
- */
-function findMarkerById(markerId) {
-    // Ищем во всех слоях
-    for (const layerId in markersByLayer) {
-        const marker = markersByLayer[layerId]?.find(m => m.customId === markerId);
-        if (marker) return { marker, layer: layerId, isUserMarker: false };
-    }
-    
-    // Ищем в пользовательских метках
-    for (const layerId in userMarkersByLayer) {
-        const marker = userMarkersByLayer[layerId]?.find(m => m.customId === markerId);
-        if (marker) return { marker, layer: layerId, isUserMarker: true };
-    }
-    
-    return null;
 }
 
 // ============================================
@@ -640,7 +270,7 @@ function findMarkerById(markerId) {
 // ============================================
 
 /**
- * Сохранение состояния карты
+ * Сохранение состояния карты (позиция и зум)
  */
 function saveMapState() {
     try {
@@ -651,31 +281,23 @@ function saveMapState() {
             lat: center.lat,
             lng: center.lng,
             zoom: zoom,
-            timestamp: Date.now(),
-            layer: currentLayer
+            timestamp: Date.now()
         };
         
-        // Сохраняем отдельно для каждого слоя
-        localStorage.setItem(`mapViewState_${currentLayer}`, JSON.stringify(mapState));
+        localStorage.setItem('mapViewState', JSON.stringify(mapState));
     } catch (error) {
         console.error('Ошибка сохранения состояния карты:', error);
     }
 }
 
 /**
- * Загрузка состояния карты для текущего слоя
+ * Загрузка состояния карты
  */
 function loadMapState() {
     try {
-        const saved = localStorage.getItem(`mapViewState_${currentLayer}`);
+        const saved = localStorage.getItem('mapViewState');
         if (saved) {
             const mapState = JSON.parse(saved);
-            
-            // Проверяем, что состояние для правильного слоя
-            if (mapState.layer !== currentLayer) {
-                console.log('Состояние карты для другого слоя, используем настройки по умолчанию');
-                return false;
-            }
             
             if (mapState.lat && mapState.lng && mapState.zoom !== undefined) {
                 map.setView([mapState.lat, mapState.lng], mapState.zoom, {
@@ -719,7 +341,7 @@ function loadFilterStates() {
                 Object.assign(subfilterStates, states.subfilterStates);
             }
             
-            console.log('Состояния фильтров загружены из localStorage (общие для всех слоев)');
+            console.log('Состояния фильтров загружены из localStorage');
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний фильтров:', error);
@@ -774,7 +396,7 @@ function loadSpecialMarksStates() {
                 Object.assign(specialSubmarksStates, states.specialSubmarksStates);
             }
             
-            console.log('Состояния особых меток загружены (общие для всех слоев)');
+            console.log('Состояния особых меток загружены');
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний особых меток:', error);
@@ -831,28 +453,20 @@ function loadToolsStates() {
  */
 function saveUserMarkers() {
     try {
-        // Сохраняем метки для каждого слоя
-        layersConfig.forEach(layer => {
-            const layerMarkers = userMarkersByLayer[layer.id] || [];
-            const markersToSave = layerMarkers.map(marker => {
-                const data = marker.markerData;
-                return {
-                    id: marker.customId,
-                    name: data.Название,
-                    filters: data.ОсновныеФильтры,
-                    subfilters: data.Подфильтры,
-                    allFilters: data.ВсеФильтрыВПорядке,
-                    x: data.X,
-                    y: data.Y,
-                    comment: data.Комментарий || '',
-                    layer: data.Карта || layer.id, // Явно сохраняем слой
-                    isMarked: markedMarkersByLayer[layer.id]?.[marker.customId] || false
-                };
-            });
-            
-            localStorage.setItem(`userMarkers_${layer.id}`, JSON.stringify(markersToSave));
-            console.log(`Пользовательские метки для слоя ${layer.id} сохранены: ${markersToSave.length}`);
-        });
+        const markersToSave = userMarkers.map(marker => ({
+            id: marker.customId,
+            name: marker.markerData.Название,
+            filters: marker.markerData.ОсновныеФильтры,
+            subfilters: marker.markerData.Подфильтры,
+            allFilters: marker.markerData.ВсеФильтрыВПорядке,
+            x: marker.markerData.X,
+            y: marker.markerData.Y,
+            comment: marker.markerData.Комментарий || '',
+            isMarked: markedMarkers[marker.customId] || false
+        }));
+        
+        localStorage.setItem('userMarkers', JSON.stringify(markersToSave));
+        console.log('Пользовательские метки сохранены:', markersToSave.length);
     } catch (error) {
         console.error('Ошибка сохранения пользовательских меток:', error);
     }
@@ -863,55 +477,51 @@ function saveUserMarkers() {
  */
 function loadUserMarkers() {
     try {
-        layersConfig.forEach(layer => {
-            const saved = localStorage.getItem(`userMarkers_${layer.id}`);
-            if (saved) {
-                const markersData = JSON.parse(saved);
+        const saved = localStorage.getItem('userMarkers');
+        if (saved) {
+            const markersData = JSON.parse(saved);
+            
+            // Обновляем счетчик
+            markersData.forEach(data => {
+                const idParts = data.id.split('_');
+                const counterPart = parseInt(idParts[idParts.length - 1]);
+                if (!isNaN(counterPart) && counterPart >= userMarkerCounter) {
+                    userMarkerCounter = counterPart + 1;
+                }
+            });
+            
+            markersData.forEach(data => {
+                // Создаем объект данных маркера в том же формате
+                const markerData = {
+                    Название: data.name,
+                    ОсновныеФильтры: data.filters || ['Мои метки'],
+                    Подфильтры: data.subfilters || [],
+                    ВсеФильтрыВПорядке: data.allFilters || ['Мои метки'],
+                    X: data.x,
+                    Y: data.y,
+                    Комментарий: data.comment || ''
+                };
                 
-                markersData.forEach(data => {
-                    // ВАЖНО: Проверяем, что данные содержат информацию о слое
-                    // Если нет - используем слой из ключа localStorage
-                    const markerLayer = data.layer || data.Карта || layer.id;
-                    
-                    // Создаем объект данных маркера
-                    const markerData = {
-                        Название: data.name,
-                        ОсновныеФильтры: data.filters || ['Мои метки'],
-                        Подфильтры: data.subfilters || [],
-                        ВсеФильтрыВПорядке: data.allFilters || ['Мои метки'],
-                        X: data.x,
-                        Y: data.y,
-                        Комментарий: data.comment || '',
-                        Карта: markerLayer // Явно указываем слой
-                    };
-                    
-                    // Создаем маркер с правильным ID
-                    const marker = createUserMarker(markerData, data.id);
-                    
-                    // Восстанавливаем состояние "отмечено"
-                    if (data.isMarked) {
-                        if (!markedMarkersByLayer[markerLayer]) {
-                            markedMarkersByLayer[markerLayer] = {};
-                        }
-                        markedMarkersByLayer[markerLayer][data.id] = true;
-                        
-                        // Обновляем внешний вид если на текущем слое
-                        if (markerLayer === currentLayer) {
-                            setTimeout(() => {
-                                updateMarkerAppearance(marker, true);
-                            }, 100);
-                        }
-                    }
-                });
+                // Создаем маркер с правильным ID
+                const marker = createUserMarker(markerData, data.id);
                 
-                console.log(`Пользовательские метки для слоя ${layer.id} загружены: ${markersData.length}`);
-            }
-        });
-        
-        // ОБНОВЛЯЕМ ВИДИМОСТЬ ПОСЛЕ ЗАГРУЗКИ
-        setTimeout(() => {
-            updateAllMarkersVisibility();
-        }, 200);
+                // Восстанавливаем состояние "отмечено"
+                if (data.isMarked) {
+                    markedMarkers[data.id] = true;
+                    // Обновляем внешний вид
+                    setTimeout(() => {
+                        updateMarkerAppearance(marker, true);
+                    }, 100);
+                }
+            });
+            
+            console.log('Пользовательские метки загружены:', markersData.length);
+            
+            // ОБНОВЛЯЕМ ВИДИМОСТЬ ПОСЛЕ ЗАГРУЗКИ
+            setTimeout(() => {
+                updateAllMarkersVisibility();
+            }, 200);
+        }
     } catch (error) {
         console.error('Ошибка загрузки пользовательских меток:', error);
     }
@@ -1018,12 +628,6 @@ async function loadMarkersFromJSON() {
  * Создание маркера на карте
  */
 function createMarkerFromJSON(data) {
-    // Проверяем, для какого слоя эта метка
-    const markerLayer = data.Карта || 'worldmap';
-    
-    // Если метка не для текущего слоя, пропускаем создание на карте
-    const addToMap = markerLayer === currentLayer;
-    
     let iconToUse = markerIcons['default'];
     
     // Используем поле "Иконка" для определения иконки
@@ -1050,7 +654,6 @@ function createMarkerFromJSON(data) {
     // Используем ID из JSON или генерируем новый
     const markerId = data.ID || generateMarkerId(data);
     marker.customId = markerId;
-    marker.layer = markerLayer; // Сохраняем информацию о слое
     
     // Popup для наведения
     const popupContent = `
@@ -1077,8 +680,7 @@ function createMarkerFromJSON(data) {
         ВсеФильтрыВПорядке: buildAllFilters(data),
         X: data.X,
         Y: data.Y,
-        Комментарий: data.Комментарий || '',
-        Карта: markerLayer // Сохраняем слой
+        Комментарий: data.Комментарий || ''
     };
     
     // Настраиваем обработчики событий
@@ -1089,16 +691,12 @@ function createMarkerFromJSON(data) {
     marker.markerData = markerData;
     marker.mainFilters = data.ОсновныеФильтры || [];
     marker.subfilters = data.Подфильтры || [];
-    marker.isUserMarker = false;
     
-    // Добавляем в массив слоя
-    if (!markersByLayer[markerLayer]) {
-        markersByLayer[markerLayer] = [];
-    }
-    markersByLayer[markerLayer].push(marker);
+    // Добавляем в глобальные массивы
+    allMarkers.push(marker);
     
-    // Распределяем по фильтрам (для текущего слоя)
-    if (markerLayer === currentLayer && data.ОсновныеФильтры) {
+    // Распределяем по фильтрам
+    if (data.ОсновныеФильтры) {
         data.ОсновныеФильтры.forEach(filter => {
             if (!markersByFilter[filter]) {
                 markersByFilter[filter] = [];
@@ -1107,18 +705,13 @@ function createMarkerFromJSON(data) {
         });
     }
     
-    if (markerLayer === currentLayer && data.Подфильтры) {
+    if (data.Подфильтры) {
         data.Подфильтры.forEach(subfilter => {
             if (!markersByFilter[subfilter]) {
                 markersByFilter[subfilter] = [];
             }
             markersByFilter[subfilter].push(marker);
         });
-    }
-    
-    // Добавляем на карту если видим и для текущего слоя
-    if (addToMap && shouldMarkerBeVisible(marker)) {
-        marker.addTo(map);
     }
     
     return marker;
@@ -1163,62 +756,28 @@ function loadMarkedMarkers() {
     console.log('Функция loadMarkedMarkers() вызвана');
     
     try {
-        // Инициализируем структуры для всех слоев
-        layersConfig.forEach(layer => {
-            if (!markedMarkersByLayer[layer.id]) {
-                markedMarkersByLayer[layer.id] = {};
-            }
-        });
+        const saved = localStorage.getItem('markedMarkers');
+        console.log('Данные из localStorage:', saved);
         
-        // Загружаем для каждого слоя
-        layersConfig.forEach(layer => {
-            const saved = localStorage.getItem(`markedMarkers_${layer.id}`);
+        if (saved) {
+            markedMarkers = JSON.parse(saved);
             
-            if (saved) {
-                try {
-                    const layerMarkedMarkers = JSON.parse(saved);
-                    
-                    // Фильтруем некорректные записи
-                    const validMarkedMarkers = {};
-                    Object.entries(layerMarkedMarkers).forEach(([markerId, isMarked]) => {
-                        if (typeof isMarked === 'boolean') {
-                            validMarkedMarkers[markerId] = isMarked;
-                        }
-                    });
-                    
-                    markedMarkersByLayer[layer.id] = validMarkedMarkers;
-                    
-                    console.log(`Загружено состояние для ${Object.keys(validMarkedMarkers).length} отмеченных маркеров слоя ${layer.id}`);
-                    
-                    // Если это текущий слой, применяем состояние
-                    if (layer.id === currentLayer) {
-                        markedMarkers = { ...validMarkedMarkers };
-                        
-                        // Применяем состояние к существующим маркерам текущего слоя
-                        const allCurrentMarkers = getAllMarkersForCurrentLayer();
-                        allCurrentMarkers.forEach(marker => {
-                            const markerId = marker.customId;
-                            if (markedMarkers[markerId]) {
-                                console.log(`Применяем отмеченное состояние к маркеру ${markerId} слоя ${layer.id}`);
-                                updateMarkerAppearance(marker, true);
-                            }
-                        });
-                    }
-                } catch (parseError) {
-                    console.error(`Ошибка парсинга данных для слоя ${layer.id}:`, parseError);
-                    markedMarkersByLayer[layer.id] = {};
+            console.log(`Загружено состояние для ${Object.keys(markedMarkers).length} отмеченных маркеров`);
+            
+            // Применяем состояние к существующим маркерам
+            allMarkers.forEach(marker => {
+                const markerId = marker.customId;
+                if (markedMarkers[markerId]) {
+                    console.log(`Применяем отмеченное состояние к маркеру ${markerId}`);
+                    updateMarkerAppearance(marker, true);
                 }
-            } else {
-                console.log(`Нет сохраненных данных об отмеченных маркерах для слоя ${layer.id}`);
-                markedMarkersByLayer[layer.id] = {};
-            }
-        });
+            });
+        } else {
+            console.log('Нет сохраненных данных об отмеченных маркерах');
+            markedMarkers = {};
+        }
     } catch (error) {
-        console.error('Общая ошибка загрузки отмеченных маркеров:', error);
-        // Инициализируем для всех слоев
-        layersConfig.forEach(layer => {
-            markedMarkersByLayer[layer.id] = {};
-        });
+        console.error('Ошибка загрузки отмеченных маркеров:', error);
         markedMarkers = {};
     }
 }
@@ -1227,32 +786,28 @@ function loadMarkedMarkers() {
  * Снять все отметки с маркеров
  */
 function clearAllMarkedMarkers() {
-    console.log('Снимаем все отметки с маркеров на всех слоях...');
+    console.log('Снимаем все отметки с маркеров...');
     
-    // Подсчитываем общее количество отмеченных меток на всех слоях
-    let totalMarkedCount = 0;
-    layersConfig.forEach(layer => {
-        const layerMarked = markedMarkersByLayer[layer.id] || {};
-        totalMarkedCount += Object.keys(layerMarked).filter(id => layerMarked[id]).length;
-    });
-    
-    if (totalMarkedCount === 0) {
+    // Проверяем, есть ли вообще отмеченные маркеры
+    const markedCount = Object.keys(markedMarkers).filter(id => markedMarkers[id]).length;
+    if (markedCount === 0) {
         alert('Нет отмеченных меток для снятия.');
         return;
     }
     
-    if (!confirm(`Вы уверены, что хотите снять ВСЕ отметки (${totalMarkedCount} меток)? Это действие нельзя отменить.`)) {
-        return;
-    }
-    
-    // 1. Снимаем отметки на текущем слое
-    const allCurrentMarkers = getAllMarkersForCurrentLayer();
-    allCurrentMarkers.forEach(marker => {
+    // Снимаем отметки со всех маркеров
+    allMarkers.forEach(marker => {
         const markerId = marker.customId;
         if (markedMarkers[markerId]) {
+            // Обновляем состояние
             markedMarkers[markerId] = false;
-            updateMarkerAppearance(marker, false);
             
+            // Обновляем внешний вид маркера, если он на карте
+            if (map.hasLayer(marker)) {
+                updateMarkerAppearance(marker, false);
+            }
+            
+            // Закрываем открытый тултип, если он активен
             if (marker.isTooltipActive) {
                 marker.closeTooltip();
                 marker.isTooltipActive = false;
@@ -1263,40 +818,27 @@ function clearAllMarkedMarkers() {
             }
         }
     });
-    
-    // 2. Снимаем отметки на всех слоях в структурах данных
-    layersConfig.forEach(layer => {
-        const layerId = layer.id;
-        
-        // Очищаем отмеченные метки в структуре данных
-        markedMarkersByLayer[layerId] = {};
-        
-        // Обновляем видимость меток, если это текущий слой
-        if (layerId === currentLayer) {
-            markedMarkers = {};
+
+    // Также снимаем отметки с пользовательских меток в их данных
+    userMarkers.forEach(marker => {
+        const markerId = marker.customId;
+        if (markedMarkers[markerId]) {
+            markedMarkers[markerId] = false;
+            updateMarkerAppearance(marker, false);
         }
-        
-        // Для каждого маркера этого слоя обновляем внешний вид
-        const allLayerMarkers = getAllMarkersForLayer(layerId);
-        allLayerMarkers.forEach(marker => {
-            if (marker.isTooltipActive) {
-                marker.closeTooltip();
-                marker.isTooltipActive = false;
-            }
-        });
     });
     
-    // 3. Сохраняем изменения
+    // Сохраняем обновленное состояние
     saveMarkedMarkers();
-    saveUserMarkers(); // Также сохраняем пользовательские метки
+    saveUserMarkers();
     
-    // 4. Обновляем видимость маркеров на текущем слое
+    // Обновляем видимость маркеров (на случай если включен режим скрытия отмеченных)
     updateAllMarkersVisibility();
     closeAllTooltips();
     
-    // 5. Показываем сообщение об успехе
+    // Показываем сообщение об успехе
     alert(`Все отметки сняты!`);
-    console.log(`Сняты все отметки на всех слоях. Всего: ${totalMarkedCount} меток`);
+    console.log(`Сняты отметки с ${markedCount} маркеров`);
 }
 
 /**
@@ -1304,19 +846,8 @@ function clearAllMarkedMarkers() {
  */
 function saveMarkedMarkers() {
     try {
-        // Убедимся, что у всех слоев есть структуры данных
-        layersConfig.forEach(layer => {
-            if (!markedMarkersByLayer[layer.id]) {
-                markedMarkersByLayer[layer.id] = {};
-            }
-        });
-        
-        // Сохраняем для каждого слоя
-        layersConfig.forEach(layer => {
-            const layerMarkedMarkers = markedMarkersByLayer[layer.id] || {};
-            localStorage.setItem(`markedMarkers_${layer.id}`, JSON.stringify(layerMarkedMarkers));
-            console.log(`Сохранено ${Object.keys(layerMarkedMarkers).length} отмеченных маркеров для слоя ${layer.id}`);
-        });
+        localStorage.setItem('markedMarkers', JSON.stringify(markedMarkers));
+        console.log(`Сохранено ${Object.keys(markedMarkers).length} отмеченных маркеров`);
     } catch (error) {
         console.error('Ошибка сохранения отмеченных маркеров:', error);
     }
@@ -1572,14 +1103,8 @@ function setupCheckboxListeners(markerId) {
  * Обновить видимость маркера при изменении его состояния "отмечено"
  */
 function updateMarkerVisibilityOnMarkedChange(markerId) {
-    // Находим маркер во всех слоях
-    const markerInfo = findMarkerById(markerId);
-    if (!markerInfo) return;
-    
-    const { marker, layer } = markerInfo;
-    
-    // Проверяем, принадлежит ли маркер текущему слою
-    if (layer !== currentLayer) return;
+    const marker = allMarkers.find(m => m.customId === markerId);
+    if (!marker) return;
     
     const shouldBeVisible = shouldMarkerBeVisible(marker);
     const isOnMap = map.hasLayer(marker);
@@ -1600,18 +1125,10 @@ function updateMarkerVisibilityOnMarkedChange(markerId) {
 function toggleMarkerMarked(markerId, checkboxElement) {
     console.log(`toggleMarkerMarked вызван для маркера ${markerId}`);
     
-    // Находим маркер во всех слоях
-    const markerInfo = findMarkerById(markerId);
-    if (!markerInfo) {
+    // Находим маркер по customId
+    const marker = allMarkers.find(m => m.customId === markerId);
+    if (!marker) {
         console.error(`Маркер с ID ${markerId} не найден`);
-        return;
-    }
-    
-    const { marker, layer } = markerInfo;
-    
-    // Проверяем, принадлежит ли маркер текущему слою
-    if (layer !== currentLayer) {
-        console.warn(`Маркер ${markerId} принадлежит слою ${layer}, а текущий слой ${currentLayer}`);
         return;
     }
     
@@ -1620,14 +1137,8 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     
     console.log(`Текущее состояние: ${isCurrentlyMarked}, новое состояние: ${newState}`);
     
-    // Обновляем состояние в текущем слое
+    // Обновляем состояние
     markedMarkers[markerId] = newState;
-    
-    // Обновляем состояние в структуре слоя
-    if (!markedMarkersByLayer[layer]) {
-        markedMarkersByLayer[layer] = {};
-    }
-    markedMarkersByLayer[layer][markerId] = newState;
     
     // Обновляем внешний вид маркера
     updateMarkerAppearance(marker, newState);
@@ -1659,7 +1170,7 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     
     // Сохраняем состояние
     saveMarkedMarkers();
-    console.log(`Сохранено состояние маркера ${markerId} слоя ${layer}: ${newState}`);
+    console.log(`Сохранено состояние маркера ${markerId}: ${newState}`);
 }
 
 /**
@@ -1719,25 +1230,6 @@ function createTestMarkers() {
     });
 }
 
-/**
- * Инициализация структур данных для слоёв
- */
-function initLayerDataStructures() {
-    layersConfig.forEach(layer => {
-        // Инициализируем массивы маркеров
-        if (!markersByLayer[layer.id]) {
-            markersByLayer[layer.id] = [];
-        }
-        if (!userMarkersByLayer[layer.id]) {
-            userMarkersByLayer[layer.id] = [];
-        }
-        // Инициализируем состояния ОТМЕЧЕННЫХ МЕТОК по слоям
-        if (!markedMarkersByLayer[layer.id]) {
-            markedMarkersByLayer[layer.id] = {};
-        }
-    });
-}
-
 // ============================================
 // УПРАВЛЕНИЕ ВИДИМОСТЬЮ МЕТОК
 // ============================================
@@ -1761,10 +1253,7 @@ function initializeMarkersVisibility() {
 function updateAllMarkersVisibility() {
     closeAllTooltips();
     
-    // Получаем все маркеры текущего слоя
-    const allCurrentMarkers = getAllMarkersForCurrentLayer();
-    
-    allCurrentMarkers.forEach(marker => {
+    allMarkers.forEach(marker => {
         const shouldBeVisible = shouldMarkerBeVisible(marker);
         const isOnMap = map.hasLayer(marker);
         
@@ -1789,11 +1278,6 @@ function updateAllMarkersVisibility() {
  * Проверка, должен ли маркер быть видимым
  */
 function shouldMarkerBeVisible(marker) {
-    // Проверяем, принадлежит ли маркер текущему слою
-    if (marker.layer !== currentLayer) {
-        return false;
-    }
-    
     const markerId = marker.customId;
     const isMarked = markedMarkers[markerId] || false;
     
@@ -1871,73 +1355,22 @@ function shouldMarkerBeVisible(marker) {
 }
 
 /**
- * Очистка массива markersByFilter при смене слоя
- */
-function clearMarkersByFilter() {
-    Object.keys(markersByFilter).forEach(key => {
-        markersByFilter[key] = [];
-    });
-}
-
-/**
- * Заполнение markersByFilter для текущего слоя
- */
-function populateMarkersByFilter() {
-    clearMarkersByFilter();
-    
-    // Добавляем обычные маркеры текущего слоя
-    const regularMarkers = markersByLayer[currentLayer] || [];
-    regularMarkers.forEach(marker => {
-        if (marker.mainFilters) {
-            marker.mainFilters.forEach(filter => {
-                if (!markersByFilter[filter]) {
-                    markersByFilter[filter] = [];
-                }
-                markersByFilter[filter].push(marker);
-            });
-        }
-        
-        if (marker.subfilters) {
-            marker.subfilters.forEach(subfilter => {
-                if (!markersByFilter[subfilter]) {
-                    markersByFilter[subfilter] = [];
-                }
-                markersByFilter[subfilter].push(marker);
-            });
-        }
-    });
-    
-    // Добавляем пользовательские метки текущего слоя
-    const userMarkers = userMarkersByLayer[currentLayer] || [];
-    userMarkers.forEach(marker => {
-        if (marker.mainFilters) {
-            marker.mainFilters.forEach(filter => {
-                if (!markersByFilter[filter]) {
-                    markersByFilter[filter] = [];
-                }
-                markersByFilter[filter].push(marker);
-            });
-        }
-        
-        if (marker.subfilters) {
-            marker.subfilters.forEach(subfilter => {
-                if (!markersByFilter[subfilter]) {
-                    markersByFilter[subfilter] = [];
-                }
-                markersByFilter[subfilter].push(marker);
-            });
-        }
-    });
-}
-
-/**
  * Закрытие всех активных тултипов
  */
 function closeAllTooltips() {
-    // Получаем все маркеры текущего слоя
-    const allCurrentMarkers = getAllMarkersForCurrentLayer();
+    allMarkers.forEach(marker => {
+        if (marker.isTooltipActive) {
+            marker.closeTooltip();
+            marker.isTooltipActive = false;
+            const element = marker.getElement();
+            if (element) {
+                element.classList.remove('tooltip-active');
+            }
+        }
+    });
     
-    allCurrentMarkers.forEach(marker => {
+    // Также закрываем все тултипы пользовательских меток
+    userMarkers.forEach(marker => {
         if (marker.isTooltipActive) {
             marker.closeTooltip();
             marker.isTooltipActive = false;
@@ -1953,9 +1386,6 @@ function closeAllTooltips() {
  * Создание пользовательской метки
  */
 function createUserMarker(data, customId = null) {
-    // Определяем слой - берем из данных или используем текущий
-    const markerLayer = data.Карта || currentLayer;
-    
     const markerId = customId || `user_marker_${Date.now()}_${userMarkerCounter++}`;
     
     // Используем иконку для "Мои метки"
@@ -1965,12 +1395,11 @@ function createUserMarker(data, customId = null) {
         icon: iconToUse,
         riseOnHover: true,
         bubblingMouseEvents: false,
-        isUserMarker: true
+        isUserMarker: true // Добавляем флаг для идентификации
     });
     
+    // Сохраняем кастомный ID
     marker.customId = markerId;
-    marker.layer = markerLayer; // Сохраняем слой
-    marker.isUserMarker = true;
     
     // Popup для наведения
     const popupContent = `
@@ -1989,47 +1418,41 @@ function createUserMarker(data, customId = null) {
     
     marker.bindPopup(popup);
     
-    // Сохраняем данные с указанием слоя
-    marker.markerData = {
-        ...data,
-        Карта: markerLayer // Явно указываем слой
-    };
+    // Сохраняем данные
+    marker.markerData = data;
     marker.mainFilters = data.ОсновныеФильтры || ['Мои метки'];
     marker.subfilters = data.Подфильтры || [];
+    marker.isUserMarker = true; // Флаг пользовательской метки
     
-    // Добавляем обработчики событий
-    setupUserMarkerEventHandlers(marker, marker.markerData);
+    // Добавляем обработчики событий - ВАЖНО: вызываем функцию настройки обработчиков
+    setupUserMarkerEventHandlers(marker, data);
     
     // Инициализируем состояние
     marker.isTooltipActive = false;
     
-    // Добавляем в массив слоя
-    if (!userMarkersByLayer[markerLayer]) {
-        userMarkersByLayer[markerLayer] = [];
-    }
-    userMarkersByLayer[markerLayer].push(marker);
+    // Добавляем в массивы
+    allMarkers.push(marker);
+    userMarkers.push(marker);
     
-    // Добавляем в фильтры только если это текущий слой
-    if (markerLayer === currentLayer) {
-        data.ОсновныеФильтры.forEach(filter => {
-            if (!markersByFilter[filter]) {
-                markersByFilter[filter] = [];
-            }
-            markersByFilter[filter].push(marker);
-        });
-        
-        // Также добавляем подфильтры
-        data.Подфильтры.forEach(subfilter => {
-            if (!markersByFilter[subfilter]) {
-                markersByFilter[subfilter] = [];
-            }
-            markersByFilter[subfilter].push(marker);
-        });
-        
-        // Добавляем на карту если видима
-        if (shouldMarkerBeVisible(marker)) {
-            marker.addTo(map);
+    // Добавляем в фильтры
+    data.ОсновныеФильтры.forEach(filter => {
+        if (!markersByFilter[filter]) {
+            markersByFilter[filter] = [];
         }
+        markersByFilter[filter].push(marker);
+    });
+    
+    // Также добавляем подфильтры
+    data.Подфильтры.forEach(subfilter => {
+        if (!markersByFilter[subfilter]) {
+            markersByFilter[subfilter] = [];
+        }
+        markersByFilter[subfilter].push(marker);
+    });
+    
+    // Добавляем на карту если видима
+    if (shouldMarkerBeVisible(marker)) {
+        marker.addTo(map);
     }
     
     return marker;
@@ -2204,51 +1627,37 @@ function setupUserMarkerEventHandlers(marker, data) {
  * Удаление пользовательской метки
  */
 function deleteUserMarker(markerId) {
-    // Находим метку во всех слоях
-    let foundMarker = null;
-    let foundLayer = null;
-    let markerIndex = -1;
+    // Находим маркер
+    const markerIndex = userMarkers.findIndex(m => m.customId === markerId);
+    if (markerIndex === -1) return;
     
-    for (const layerId in userMarkersByLayer) {
-        const layerMarkers = userMarkersByLayer[layerId];
-        if (!layerMarkers) continue;
-        
-        const layerIndex = layerMarkers.findIndex(m => m.customId === markerId);
-        if (layerIndex !== -1) {
-            foundMarker = layerMarkers[layerIndex];
-            foundLayer = layerId;
-            markerIndex = layerIndex;
-            break;
-        }
+    const marker = userMarkers[markerIndex];
+    
+    // Удаляем с карты
+    if (map.hasLayer(marker)) {
+        map.removeLayer(marker);
     }
     
-    if (!foundMarker) return;
+    // Удаляем из всех массивов
+    userMarkers.splice(markerIndex, 1);
     
-    // Удаляем с карты если виден
-    if (map.hasLayer(foundMarker)) {
-        map.removeLayer(foundMarker);
+    const allMarkerIndex = allMarkers.findIndex(m => m.customId === markerId);
+    if (allMarkerIndex !== -1) {
+        allMarkers.splice(allMarkerIndex, 1);
     }
     
-    // Удаляем из массива слоя
-    userMarkersByLayer[foundLayer].splice(markerIndex, 1);
-    
-    // Удаляем из фильтров (только если это текущий слой)
-    if (foundLayer === currentLayer) {
-        foundMarker.mainFilters.forEach(filter => {
-            if (markersByFilter[filter]) {
-                const filterIndex = markersByFilter[filter].findIndex(m => m.customId === markerId);
-                if (filterIndex !== -1) {
-                    markersByFilter[filter].splice(filterIndex, 1);
-                }
+    // Удаляем из фильтров
+    marker.mainFilters.forEach(filter => {
+        if (markersByFilter[filter]) {
+            const filterIndex = markersByFilter[filter].findIndex(m => m.customId === markerId);
+            if (filterIndex !== -1) {
+                markersByFilter[filter].splice(filterIndex, 1);
             }
-        });
-    }
+        }
+    });
     
     // Удаляем состояние "отмечено"
-    if (markedMarkersByLayer[foundLayer] && markedMarkersByLayer[foundLayer][markerId]) {
-        delete markedMarkersByLayer[foundLayer][markerId];
-    }
-    if (foundLayer === currentLayer && markedMarkers[markerId]) {
+    if (markedMarkers[markerId]) {
         delete markedMarkers[markerId];
     }
     
@@ -2256,7 +1665,7 @@ function deleteUserMarker(markerId) {
     saveUserMarkers();
     saveMarkedMarkers();
     
-    console.log(`Пользовательская метка ${markerId} удалена из слоя ${foundLayer}`);
+    console.log(`Пользовательская метка ${markerId} удалена`);
 }
 
 /**
@@ -2267,29 +1676,18 @@ function cleanupGhostMarkedMarkers() {
     
     let cleanupCount = 0;
     
-    // Проходим по всем слоям
-    layersConfig.forEach(layer => {
-        const layerMarkedMarkers = markedMarkersByLayer[layer.id];
-        if (!layerMarkedMarkers) return;
+    // Проходим по всем отмеченным маркерам
+    Object.keys(markedMarkers).forEach(markerId => {
+        // Ищем маркер во всех источниках
+        const inAllMarkers = allMarkers.some(m => m.customId === markerId);
+        const inUserMarkers = userMarkers.some(m => m.customId === markerId);
         
-        // Получаем все маркеры слоя
-        const allLayerMarkers = getAllMarkersForLayer(layer.id);
-        
-        // Проходим по всем отмеченным маркерам слоя
-        Object.keys(layerMarkedMarkers).forEach(markerId => {
-            // Ищем маркер в маркерах слоя
-            const markerExists = allLayerMarkers.some(m => m.customId === markerId);
-            
-            // Если маркер не найден - удаляем запись
-            if (!markerExists) {
-                delete layerMarkedMarkers[markerId];
-                cleanupCount++;
-                console.log(`Удалена запись об удаленной метке: ${markerId} слоя ${layer.id}`);
-            }
-        });
-        
-        // Сохраняем обновленный слой
-        markedMarkersByLayer[layer.id] = layerMarkedMarkers;
+        // Если маркер не найден нигде - удаляем запись
+        if (!inAllMarkers && !inUserMarkers) {
+            delete markedMarkers[markerId];
+            cleanupCount++;
+            console.log(`Удалена запись об удаленной метке: ${markerId}`);
+        }
     });
     
     if (cleanupCount > 0) {
@@ -2955,7 +2353,7 @@ function createMarkerDialog(latlng) {
             }
         });
         
-        // Создаем данные маркера с указанием текущего слоя
+        // Создаем данные маркера
         const markerData = {
             Название: name,
             ОсновныеФильтры: mainFiltersArray,
@@ -2963,8 +2361,7 @@ function createMarkerDialog(latlng) {
             ВсеФильтрыВПорядке: filtersArray,
             X: Math.round(latlng.lng),
             Y: Math.round(latlng.lat),
-            Комментарий: comment || '',
-            Карта: currentLayer // Явно указываем текущий слой
+            Комментарий: comment || ''
         };
         
         // Создаем маркер
@@ -3026,10 +2423,7 @@ function updateCreateModeCursor() {
  * Экспорт пользовательских меток в JSON файл
  */
 function exportUserMarkersToJSON() {
-    // Получаем пользовательские метки текущего слоя
-    const currentUserMarkers = userMarkersByLayer[currentLayer] || [];
-    
-    if (currentUserMarkers.length === 0) {
+    if (userMarkers.length === 0) {
         alert('Нет пользовательских меток для экспорта');
         return;
     }
@@ -3065,8 +2459,7 @@ function exportUserMarkersToJSON() {
     dialog.innerHTML = `
         <h3 style="margin-top: 0; color: #4CAF50; text-align: center;">Экспорт пользовательских меток</h3>
         <div style="margin-bottom: 15px; font-size: 13px; color: #aaa; text-align: center;">
-            Текущий слой: <strong style="color: white;">${getCurrentLayerName()}</strong><br>
-            Всего меток для экспорта: <strong style="color: white;">${currentUserMarkers.length}</strong>
+            Всего меток для экспорта: <strong style="color: white;">${userMarkers.length}</strong>
         </div>
         <div style="margin-bottom: 20px; font-size: 12px; color: #aaa; text-align: center;">
             Выберите действие для экспорта ваших меток
@@ -3094,7 +2487,7 @@ function exportUserMarkersToJSON() {
             </button>
             
             <div style="font-size: 11px; color: #aaa; text-align: center; margin: 0 10px;">
-                Экспортирует метки текущего слоя в JSON файл без удаления
+                Экспортирует все метки в JSON файл без удаления
             </div>
             
             <!-- Желтая кнопка - Экспортировать и удалить -->
@@ -3118,7 +2511,7 @@ function exportUserMarkersToJSON() {
             </button>
             
             <div style="font-size: 11px; color: #ff9800; text-align: center; margin: 0 10px;">
-                Экспортирует метки текущего слоя в JSON и затем удаляет их с карты
+                Экспортирует метки в JSON и затем удаляет их с карты
             </div>
         </div>
         
@@ -3174,10 +2567,10 @@ function exportUserMarkersToJSON() {
         this.style.borderColor = 'rgba(255, 255, 255, 0.2)';
     });
     
-    // Функция для экспорта JSON (обновленная для работы с currentUserMarkers)
+    // Функция для экспорта JSON
     const performJSONExport = (shouldDelete = false, formatted = false) => {
-        // Обрабатываем каждую метку текущего слоя
-        const markersData = currentUserMarkers.map(marker => {
+        // Обрабатываем каждую метку
+        const markersData = userMarkers.map(marker => {
             const data = marker.markerData;
             const markerId = `${data.X}_${data.Y}_${data.Название.replace(/\s+/g, '_')}`;
             const allFilters = data.ВсеФильтрыВПорядке || [];
@@ -3218,7 +2611,7 @@ function exportUserMarkersToJSON() {
                 X: data.X,
                 Y: data.Y,
                 Комментарий: data.Комментарий || '',
-                Карта: data.Карта || currentLayer
+                Карта: 'worldmap'
             };
         });
         
@@ -3245,13 +2638,12 @@ function exportUserMarkersToJSON() {
         const link = document.createElement('a');
         link.setAttribute('href', url);
         
-        // Генерируем имя файла с датой и именем слоя
+        // Генерируем имя файла с датой
         const date = new Date();
         const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
         const timeStr = date.getHours().toString().padStart(2, '0') + 
                        date.getMinutes().toString().padStart(2, '0');
-        const layerName = getCurrentLayerName().replace(/\s+/g, '_');
-        link.setAttribute('download', `мои_метки_${layerName}_${dateStr}_${timeStr}.json`);
+        link.setAttribute('download', `мои_метки_${dateStr}_${timeStr}.json`);
         link.style.display = 'none';
         
         document.body.appendChild(link);
@@ -3264,17 +2656,15 @@ function exportUserMarkersToJSON() {
         // Если нужно удалить метки после экспорта
         if (shouldDelete) {
             // Запоминаем количество меток для сообщения
-            const markersCount = currentUserMarkers.length;
+            const markersCount = userMarkers.length;
             
             // Подтверждение для удаления
-            if (confirm(`Вы уверены, что хотите удалить ${markersCount} меток текущего слоя после экспорта? Это действие нельзя отменить.`)) {
-                // Удаляем все пользовательские метки текущего слоя
-                // Создаем копию массива, так как оригинальный будет изменяться
-                const markersToDelete = [...currentUserMarkers];
-                
-                markersToDelete.forEach(marker => {
+            if (confirm(`Вы уверены, что хотите удалить ${markersCount} меток после экспорта? Это действие нельзя отменить.`)) {
+                // Удаляем все пользовательские метки
+                while (userMarkers.length > 0) {
+                    const marker = userMarkers[0];
                     deleteUserMarker(marker.customId);
-                });
+                }
                 
                 // Обновляем видимость
                 updateAllMarkersVisibility();
@@ -3282,17 +2672,16 @@ function exportUserMarkersToJSON() {
                 // Сохраняем изменения
                 saveUserMarkers();
                 
-                console.log(`Экспортировано и удалено ${markersCount} меток слоя ${currentLayer}`);
+                console.log(`Экспортировано и удалено ${markersCount} меток`);
                 setTimeout(() => {
-                    alert(`Экспортировано и удалено ${markersCount} меток слоя ${getCurrentLayerName()}`);
+                    alert(`Экспортировано и удалено ${markersCount} меток`);
                 }, 300);
             }
         } else {
             const formatText = formatted ? ' (форматированный)' : '';
-            const layerName = getCurrentLayerName();
-            console.log(`Экспортировано ${currentUserMarkers.length} меток слоя ${currentLayer} в JSON${formatText}`);
+            console.log(`Экспортировано ${userMarkers.length} меток в JSON${formatText}`);
             setTimeout(() => {
-                alert(`Экспортировано ${currentUserMarkers.length} меток слоя "${layerName}" в файл JSON${formatText}`);
+                alert(`Экспортировано ${userMarkers.length} меток в файл JSON${formatText}`);
             }, 300);
         }
     };
@@ -3322,14 +2711,6 @@ function exportUserMarkersToJSON() {
         }
     };
     document.addEventListener('keydown', closeHandler);
-}
-
-/**
- * Получить отображаемое имя текущего слоя
- */
-function getCurrentLayerName() {
-    const layerConfig = layersConfig.find(l => l.id === currentLayer);
-    return layerConfig ? layerConfig.name : currentLayer;
 }
 
 // ============================================
@@ -3870,7 +3251,9 @@ const ToolsControl = L.Control.extend({
         });
         
         clearAllButton.addEventListener('click', function() {
-            clearAllMarkedMarkers();
+            if (confirm('Вы уверены, что хотите снять все отметки? Это действие нельзя отменить.')) {
+                clearAllMarkedMarkers();
+            }
             L.DomEvent.stopPropagation(this);
         });
 
@@ -4563,25 +3946,13 @@ function enableSpecialMarksScroll() {
 /**
  * Основная функция инициализации приложения
  */
-function initializeApp() {
+async function initializeApp() {
     console.log('Инициализация приложения...');
     
-    // Инициализируем структуры данных для слоёв
-    initLayerDataStructures();
-    
-    // Загружаем выбранный слой
-    loadCurrentLayer();
-    
     // Инициализация карты
-    initMap();
-    
-    // Инициализация слоёв
-    initLayers();
+    await initMap();
     
     // Добавление контролов на карту
-    const mapSwitchControl = new MapSwitchControl();
-    mapSwitchControl.addTo(map);
-    
     const toolsControl = new ToolsControl();
     toolsControl.addTo(map);
     
@@ -4600,14 +3971,11 @@ function initializeApp() {
             loadUserMarkers();
             cleanupGhostMarkedMarkers();
             
-            // Заполняем markersByFilter для текущего слоя
-            populateMarkersByFilter();
-            
             // Настройка прокрутки
             setTimeout(() => {
                 enableFilterScroll();
                 enableSpecialMarksScroll();
-                enableToolsScroll();
+                enableToolsScroll(); 
                 
                 // Обновление состояний интерфейса
                 Object.keys(filterElements).forEach(filterName => {
@@ -4629,7 +3997,6 @@ function initializeApp() {
                 
                 updateAllMarkersVisibility();
                 updateAllFiltersCheckbox();
-                
                 setTimeout(() => {
                     specialMarksConfig.forEach(mark => {
                         updateSpecialMarkCheckboxState(mark.name);
@@ -4669,18 +4036,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Находим маркер
-            const markerInfo = findMarkerById(markerId);
-            if (!markerInfo) {
-                console.error(`Маркер с ID ${markerId} не найден`);
-                return;
+            // Находим соответствующий маркер среди ВСЕХ маркеров
+            let activeMarker = allMarkers.find(marker => marker.customId === markerId);
+            
+            // Если не найдено среди всех маркеров, ищем среди пользовательских
+            if (!activeMarker) {
+                activeMarker = userMarkers.find(marker => marker.customId === markerId);
             }
             
-            const { marker, layer } = markerInfo;
-            
-            // Проверяем, принадлежит ли маркер текущему слою
-            if (layer !== currentLayer) {
-                console.warn(`Маркер ${markerId} принадлежит слою ${layer}, игнорируем клик`);
+            if (!activeMarker) {
+                console.error(`Маркер с ID ${markerId} не найден среди ${allMarkers.length} маркеров и ${userMarkers.length} пользовательских маркеров`);
                 return;
             }
             
@@ -4690,14 +4055,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Обновляем состояние
             markedMarkers[markerId] = newState;
             
-            // Обновляем состояние в слое
-            if (!markedMarkersByLayer[layer]) {
-                markedMarkersByLayer[layer] = {};
-            }
-            markedMarkersByLayer[layer][markerId] = newState;
-            
             // Обновляем внешний вид маркера
-            updateMarkerAppearance(marker, newState);
+            updateMarkerAppearance(activeMarker, newState);
             
             // Обновляем чекбокс
             const checkboxElement = tooltip.querySelector('.tooltip-mark-checkbox');
@@ -4715,7 +4074,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Сохраняем состояние
             saveMarkedMarkers();
-            saveUserMarkers();
+            saveUserMarkers(); // Также сохраняем пользовательские метки
             
             return false;
         }
