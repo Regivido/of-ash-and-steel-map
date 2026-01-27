@@ -78,10 +78,10 @@
 .toggle-group {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Выравниваем по краям */
+    justify-content: space-between;
     padding: 6px 0;
     gap: 10px;
-    width: 100%; /* Занимаем всю ширину контейнера */  
+    width: 100%; 
 }
 
 /* Стили для переключателя координат */
@@ -164,7 +164,7 @@ opacity: 0;
 visibility: hidden;
 transform: translateX(-50%) translateY(10px);
 }
-    /* Подписи для переключателей */
+/* Подписи для переключателей */
 .coords-label, .hidden-label {
     font-family: Arial, sans-serif;
     color: #d0d0d0;
@@ -193,7 +193,7 @@ transform: translateX(-50%) translateY(10px);
     flex-direction: column;
     transition: all 0.3s ease;
     min-width: 220px;
-    overflow: hidden; /* Изменено с scroll на hidden */
+    overflow: hidden;
 }
 
 .filters-container:hover {
@@ -509,7 +509,13 @@ transform: translateX(-50%) translateY(10px);
     font-weight: 500;
     white-space: nowrap;
     user-select: none;
-    padding-left: 0; /* Убираем лишний отступ */
+    padding-left: 0;
+}
+
+.subfilter-label-text {
+    font-size: 12px;
+    color: rgba(208, 208, 208, 0.9);
+    padding-left: 10px;
 }
 
 .subfilter-checkbox {
@@ -631,6 +637,7 @@ transform: translateX(-50%) translateY(10px);
     font-size: 16px;
     padding: 0;
     color: #333;
+    z-index: 1001;
 }
 
 .clicked-tooltip:before,
@@ -643,11 +650,6 @@ transform: translateX(-50%) translateY(10px);
     filter: drop-shadow(0 0 6px black) brightness(1.3);
     z-index: 1000;
     transform: scale(1.2);
-}
-
-/* Tooltip должен быть поверх popup */
-.clicked-tooltip {
-    z-index: 1001;
 }
 
 /* Маркеры */
@@ -667,8 +669,6 @@ transform: translateX(-50%) translateY(10px);
 }
 
 /* ===== ПАНЕЛЬ ОСОБЫХ МЕТОК ===== */
-
-/* Вертикальный контейнер для особых меток (левый нижний) */
 .special-marks-container {
     position: absolute;
     bottom: 20px;
@@ -703,14 +703,12 @@ transform: translateX(-50%) translateY(10px);
     opacity: 1;
 }
 
-/* Когда свернуто */
 .special-marks-content.collapsed {
     max-height: 0;
     opacity: 0;
     overflow: hidden;
 }
 
-/* Убираем скроллбар когда контейнер свернут */
 .special-marks-content:not(.collapsed)::-webkit-scrollbar {
     width: 6px;
 }
@@ -729,7 +727,7 @@ transform: translateX(-50%) translateY(10px);
     background: rgba(255, 255, 255, 0.25);
 }
 
-/* Заголовок особых меток - фиксированный */
+/* Заголовок особых меток*/
 .special-marks-title {
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -812,7 +810,7 @@ transform: translateX(-50%) translateY(10px);
     font-weight: 500;
     white-space: nowrap;
     user-select: none;
-    cursor: help; /* Курсор справки при наведении */
+    cursor: help;
     transition: color 0.2s ease;
 }
 
@@ -871,7 +869,6 @@ transform: translateX(-50%) translateY(10px);
 }
 
 /* ===== СТИЛИ ДЛЯ ПОДМЕТОК ===== */
-
 .submarks-container {
     width: 100%;
     margin: 2px 0 0 12px;
@@ -961,7 +958,6 @@ transform: translateX(-50%) translateY(10px);
     justify-content: center;
 }
 
-/* Стрелка для меток с подметками */
 .special-mark-arrow {
     color: rgba(255, 255, 255, 0.5);
     font-size: 10px;
@@ -989,7 +985,6 @@ transform: translateX(-50%) translateY(10px);
     border-radius: 2px;
 }
 
-/* Для подметок тоже */
 .submark-checkbox.partial {
     background: rgba(76, 175, 80, 0.15);
     border-color: #4CAF50;
@@ -1008,15 +1003,12 @@ transform: translateX(-50%) translateY(10px);
     border-radius: 1px;
 }
 
-/* Убираем галочку при частичном состоянии */
 .special-mark-checkbox.partial .special-mark-checkmark,
 .submark-checkbox.partial .submark-checkmark {
     display: none;
 }
 
 /* ===== ПАНЕЛЬ ИНСТРУМЕНТОВ (правый верхний) ===== */
-
-/* Вертикальный контейнер для инструментов */
 .tools-container {
     position: absolute;
     top: 0;
@@ -1051,7 +1043,6 @@ transform: translateX(-50%) translateY(10px);
     opacity: 1;
 }
 
-/* Когда свернуто */
 .tools-content.collapsed {
     max-height: 0;
     opacity: 0;
@@ -1126,7 +1117,6 @@ transform: translateX(-50%) translateY(10px);
 }
 
 /* ===== СТИЛИ ДЛЯ ИНСТРУМЕНТОВ ===== */
-
 .tool-group {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     padding: 4px 0;
@@ -1219,7 +1209,6 @@ transform: translateX(-50%) translateY(10px);
     z-index: 10 !important;
 }
 
-/* Убираем эффекты при наведении на отмеченные маркеры */
 .leaflet-marker-icon.marked:hover {
     filter: brightness(1.0) ;    
     z-index: 11 !important;
@@ -1262,14 +1251,33 @@ transform: translateX(-50%) translateY(10px);
     border-color: #2196F3;
 }
 
-/* Стиль для курсора в режиме создания меток */
-body.create-marker-mode {
-    cursor: crosshair !important;
+.tool-button.clear-all {
+    width: 85%;
+    padding: 8px 12px;
+    background: rgba(255, 87, 87, 0.1);
+    border: 1px solid rgba(255, 87, 87, 0.3);
+    border-radius: 4px;
+    color: #ff5757;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: all 0.2s ease;
 }
 
-/* Стиль для курсора при наведении на пользовательские метки в режиме создания */
+.tool-button.clear-all:hover {
+    background: rgba(255, 87, 87, 0.2);
+    border-color: #ff5757;
+}
+
+/* Стиль для курсора в режиме создания меток */
+body.create-marker-mode {
+    cursor: crosshair;
+}
+
 body.create-marker-mode .leaflet-marker-icon.is-user-marker {
-    cursor: pointer !important;
+    cursor: pointer;
 }
 
 /* Стиль для пользовательских меток */
@@ -1324,7 +1332,6 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
     transform: scale(1.1);
 }
 
-/* Стили для пустого состояния */
 #filter-chips-container:empty::before {
     content: 'Нет выбранных фильтров';
     color: rgba(255, 255, 255, 0.3);
@@ -1335,7 +1342,6 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
     width: 100%;
 }
 
-/* Стили для автодополнения с группировкой */
 #filters-autocomplete div[style*="background: rgba(0, 0, 0, 0.2)"] {
     cursor: default;
 }
@@ -1379,6 +1385,11 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
     transform: translateX(2px);
 }
 
+.filter-tree-item.hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .filter-tree-item[data-is-subfilter="true"] {
     border-left: 2px solid rgba(76, 175, 80, 0.3);
 }
@@ -1393,15 +1404,13 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
     border-left: 3px solid #4CAF50;
 }
 
-/* Анимация добавления фильтра */
-@keyframes filterAdded {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+.filter-tree-item.selected.hover {
+    background: rgba(76, 175, 80, 0.25);
+    border-color: rgba(76, 175, 80, 0.5);
 }
 
-.filter-tree-item.selected {
-    animation: filterAdded 0.3s ease;
+.tree-item-status.selected-hover {
+    background: rgba(76, 175, 80, 0.3);
 }
 
 /* Стили для чипсов в диалоге создания метки */
@@ -1439,22 +1448,20 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
 @media (max-width: 768px) {
     .create-marker-dialog {
         flex-direction: column;
-        width: 95% !important;
-        max-height: 85vh !important;
+        width: 95%;
+        max-height: 85vh;
     }
     
     .create-marker-dialog > div {
-        border-right: none !important;
+        border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding-right: 0 !important;
+        padding-right: 0;
         padding-bottom: 20px;
         margin-bottom: 20px;
     }
 }
 
 /* ===== КНОПКА ПЕРЕКЛЮЧЕНИЯ КАРТЫ (правый нижний угол) ===== */
-
-/* Стиль для кнопки переключения */
 .map-switch-button {
     position: absolute;
     bottom: 20px;
@@ -1494,7 +1501,6 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
-/* Текст кнопки */
 .map-switch-text {
     font-family: Arial, sans-serif;
     color: #d0d0d0;
@@ -1506,5 +1512,528 @@ body.create-marker-mode .leaflet-marker-icon.is-user-marker {
 }
 
 .map-switch-button:hover .map-switch-text {
+    color: #ffffff;
+}
+
+/* ===== СТИЛИ ДЛЯ ДИАЛОГА СОЗДАНИЯ МЕТОК ===== */
+.create-marker-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+}
+
+.create-marker-dialog {
+    background: rgba(30, 33, 40, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 20px;
+    width: 800px;
+    max-width: 95%;
+    max-height: 90vh;
+    overflow: hidden;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.create-marker-dialog h3 {
+    margin-top: 0;
+    color: #4CAF50;
+    text-align: center;
+}
+
+.coordinates-info {
+    margin-bottom: 15px;
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+}
+
+.dialog-layout {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    min-height: 400px;
+}
+
+.filters-tree-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 20px;
+}
+
+.filters-tree-label {
+    display: block;
+    margin-bottom: 10px;
+    color: #ddd;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.filters-tree-container {
+    flex: 1;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filters-tree-tip {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 5px;
+}
+
+.filters-tree-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 10px 0;
+}
+
+.filters-chips-placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    font-style: italic;
+    padding: 12px;
+    width: 100%;
+    text-align: center;
+}
+
+.create-form-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    color: #ddd;
+    font-size: 14px;
+}
+
+.required {
+    color: #ff5757;
+}
+
+.form-input {
+    width: 95%;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+}
+
+.filter-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    min-height: 40px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.search-input {
+    width: 95%;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    color: white;
+    font-size: 13px;
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(40, 44, 52, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    margin-top: 2px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 10000;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.search-info {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.form-textarea {
+    width: 95%;
+    height: 100%;
+    min-height: 120px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 5px;
+    color: white;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.cancel-button {
+    padding: 10px 20px;
+    background: rgba(255, 87, 87, 0.1);
+    border: 1px solid rgba(255, 87, 87, 0.3);
+    border-radius: 5px;
+    color: #ff5757;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+    background: rgba(255, 87, 87, 0.2);
+    border-color: #ff5757;
+    color: #ff5757;
+}
+
+.save-button {
+    padding: 10px 20px;
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid #4CAF50;
+    border-radius: 5px;
+    color: #4CAF50;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.save-button:hover {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+/* Элементы дерева фильтров */
+.filter-tree-item {
+    padding: 8px 12px;
+    margin: 4px 0;
+    cursor: pointer;
+    font-size: 13px;
+    color: #d0d0d0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.filter-tree-item.subfilter {
+    padding: 6px 12px 6px 30px;
+    margin: 2px 0;
+    font-size: 12px;
+    color: rgba(208, 208, 208, 0.9);
+}
+
+.filter-tree-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.filter-tree-item.selected {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.filter-tree-item.selected:hover {
+    background: rgba(76, 175, 80, 0.25);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.tree-item-status {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 8px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.filter-tree-item.selected .tree-item-status {
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.filter-tree-item:hover .tree-item-status {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-tree-item.selected:hover .tree-item-status {
+    background: rgba(76, 175, 80, 0.3);
+}
+
+/* Стили для результатов поиска */
+.search-group-header {
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.search-result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #d0d0d0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-result-item:hover {
+    background: rgba(76, 175, 80, 0.15);
+    color: #4CAF50;
+}
+
+.search-add-icon {
+    color: rgba(76, 175, 80, 0.7);
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.search-result-item:hover .search-add-icon {
+    color: #4CAF50;
+}
+
+/* Стили для диалога экспорта */
+.export-dialog {
+    background: rgba(30, 33, 40, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 20px;
+    width: 450px;
+    max-width: 90%;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.export-dialog h3 {
+    margin-top: 0;
+    color: #4CAF50;
+    text-align: center;
+}
+
+.export-info {
+    margin-bottom: 15px;
+    font-size: 13px;
+    color: #aaa;
+    text-align: center;
+}
+
+.export-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.export-button {
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.export-json-button {
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid #4CAF50;
+    color: #4CAF50;
+}
+
+.export-delete-button {
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid #FFC107;
+    color: #FFC107;
+}
+
+.export-button:hover {
+    transform: translateY(-1px);
+}
+
+.export-json-button:hover {
+    background: rgba(76, 175, 80, 0.25);
+}
+
+.export-delete-button:hover {
+    background: rgba(255, 193, 7, 0.25);
+}
+
+.export-note {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    margin: 0 10px;
+}
+
+.warning-note {
+    font-size: 11px;
+    color: #ff9800;
+    text-align: center;
+    margin: 0 10px;
+}
+
+.export-cancel-button {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: #d0d0d0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.export-cancel-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ===== СТИЛИ ДЛЯ ТУЛТИПОВ МАРКЕРОВ ===== */
+.marker-tooltip-container {
+    max-width: 250px;
+    padding: 10px;
+    position: relative;
+}
+
+.marker-tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.marker-tooltip-title {
+    margin: 0;
+    color: white;
+    font-size: 15px;
+    flex: 1;
+    font-family: Arial, sans-serif;
+    font-weight: 600;
+}
+
+.marker-tooltip-comment {
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding-top: 8px;
+    font-size: 13px;
+    color: white;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.marker-tooltip-checkbox-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 8px;
+}
+
+.marker-tooltip-checkbox {
+    width: 16px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.marker-tooltip-checkbox.checked {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4CAF50;
+}
+
+.marker-tooltip-checkmark {
+    color: #4CAF50;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.marker-tooltip-label {
+    color: #d0d0d0;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    cursor: pointer;
+    user-select: none;
+}
+
+.marker-tooltip-label:hover {
     color: #ffffff;
 }

@@ -219,7 +219,7 @@ function initMarkerIcons() {
         'Легендарное оружие': 'assets/legend.png',
         'Места для отдыха': 'assets/rest.png',
         'Места для рыбалки': 'assets/fishing.png',
-        'НПС': 'assets/npc.png',
+        'НИП': 'assets/npc.png',
         'Обелиски': 'assets/obelisk.png',
         'Опасные противники': 'assets/monster.png',
         'Особые': 'assets/unknown.png',        
@@ -673,7 +673,6 @@ function loadMapState() {
             
             // Проверяем, что состояние для правильного слоя
             if (mapState.layer !== currentLayer) {
-                console.log('Состояние карты для другого слоя, используем настройки по умолчанию');
                 return false;
             }
             
@@ -681,7 +680,6 @@ function loadMapState() {
                 map.setView([mapState.lat, mapState.lng], mapState.zoom, {
                     animate: false
                 });
-                console.log('Состояние карты восстановлено:', mapState);
                 return true;
             }
         }
@@ -718,8 +716,7 @@ function loadFilterStates() {
             if (states.subfilterStates) {
                 Object.assign(subfilterStates, states.subfilterStates);
             }
-            
-            console.log('Состояния фильтров загружены из localStorage (общие для всех слоев)');
+
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний фильтров:', error);
@@ -774,7 +771,6 @@ function loadSpecialMarksStates() {
                 Object.assign(specialSubmarksStates, states.specialSubmarksStates);
             }
             
-            console.log('Состояния особых меток загружены (общие для всех слоев)');
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний особых меток:', error);
@@ -811,7 +807,6 @@ function loadToolsStates() {
                 hideCompletedEnabled = states.hideCompletedEnabled;
             }
             
-            console.log('Состояния инструментов загружены:', states);
             return true;
         } catch (error) {
             console.error('Ошибка загрузки состояний инструментов:', error);
@@ -851,7 +846,6 @@ function saveUserMarkers() {
             });
             
             localStorage.setItem(`userMarkers_${layer.id}`, JSON.stringify(markersToSave));
-            console.log(`Пользовательские метки для слоя ${layer.id} сохранены: ${markersToSave.length}`);
         });
     } catch (error) {
         console.error('Ошибка сохранения пользовательских меток:', error);
@@ -904,7 +898,6 @@ function loadUserMarkers() {
                     }
                 });
                 
-                console.log(`Пользовательские метки для слоя ${layer.id} загружены: ${markersData.length}`);
             }
         });
         
@@ -995,7 +988,6 @@ async function loadMarkersFromJSON() {
         // Создаем маркеры
         markersData.forEach((data, index) => {
             if (data.Название && !isNaN(data.X) && !isNaN(data.Y)) {
-                console.log(`Создание маркера ${index + 1}: ${data.Название}`);
                 createMarkerFromJSON(data);
             }
         });
@@ -1160,7 +1152,6 @@ function buildAllFilters(data) {
  * Загрузка состояния отмеченных маркеров
  */
 function loadMarkedMarkers() {
-    console.log('Функция loadMarkedMarkers() вызвана');
     
     try {
         // Инициализируем структуры для всех слоев
@@ -1187,9 +1178,7 @@ function loadMarkedMarkers() {
                     });
                     
                     markedMarkersByLayer[layer.id] = validMarkedMarkers;
-                    
-                    console.log(`Загружено состояние для ${Object.keys(validMarkedMarkers).length} отмеченных маркеров слоя ${layer.id}`);
-                    
+                                        
                     // Если это текущий слой, применяем состояние
                     if (layer.id === currentLayer) {
                         markedMarkers = { ...validMarkedMarkers };
@@ -1199,7 +1188,6 @@ function loadMarkedMarkers() {
                         allCurrentMarkers.forEach(marker => {
                             const markerId = marker.customId;
                             if (markedMarkers[markerId]) {
-                                console.log(`Применяем отмеченное состояние к маркеру ${markerId} слоя ${layer.id}`);
                                 updateMarkerAppearance(marker, true);
                             }
                         });
@@ -1209,7 +1197,6 @@ function loadMarkedMarkers() {
                     markedMarkersByLayer[layer.id] = {};
                 }
             } else {
-                console.log(`Нет сохраненных данных об отмеченных маркерах для слоя ${layer.id}`);
                 markedMarkersByLayer[layer.id] = {};
             }
         });
@@ -1315,7 +1302,6 @@ function saveMarkedMarkers() {
         layersConfig.forEach(layer => {
             const layerMarkedMarkers = markedMarkersByLayer[layer.id] || {};
             localStorage.setItem(`markedMarkers_${layer.id}`, JSON.stringify(layerMarkedMarkers));
-            console.log(`Сохранено ${Object.keys(layerMarkedMarkers).length} отмеченных маркеров для слоя ${layer.id}`);
         });
     } catch (error) {
         console.error('Ошибка сохранения отмеченных маркеров:', error);
@@ -1350,7 +1336,6 @@ function updateMarkerAppearance(marker, isMarked) {
  * Обновление состояния чекбокса в тултипе
  */
 function updateTooltipCheckbox(markerId) {
-    // Находим активный тултип
     const tooltip = document.querySelector('.clicked-tooltip');
     if (!tooltip) return;
     
@@ -1359,14 +1344,11 @@ function updateTooltipCheckbox(markerId) {
     
     const isMarked = markedMarkers[markerId] || false;
     
-    // Обновляем визуальное состояние чекбокса
     if (isMarked) {
-        checkboxElement.style.background = 'rgba(76, 175, 80, 0.2)';
-        checkboxElement.style.borderColor = '#4CAF50';
-        checkboxElement.innerHTML = '<div style="color: #4CAF50; font-size: 12px; font-weight: bold;">✓</div>';
+        checkboxElement.classList.add('checked');
+        checkboxElement.innerHTML = '<div class="marker-tooltip-checkmark">✓</div>';
     } else {
-        checkboxElement.style.background = 'rgba(255, 255, 255, 0.1)';
-        checkboxElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        checkboxElement.classList.remove('checked');
         checkboxElement.innerHTML = '';
     }
 }
@@ -1423,64 +1405,27 @@ function setupMarkerEventHandlers(marker, data, tooltip) {
         
         // Создаем HTML для тултипа с актуальным состоянием чекбокса
         const tooltipContent = `
-            <div style="max-width: 250px; padding: 10px; position: relative;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h4 style="margin: 0; color: white; font-size: 15px; flex: 1;">
+            <div class="marker-tooltip-container">
+                <div class="marker-tooltip-header">
+                    <h4 class="marker-tooltip-title">
                         ${data.Название}
                     </h4>
                 </div>
                 ${commentText ? `
-                    <div style="
-                        border-top: 1px solid rgba(255, 255, 255, 0.3);
-                        padding-top: 8px;
-                        font-size: 13px;
-                        color: white;
-                        line-height: 1.4;
-                        margin-bottom: 10px;
-                    ">
+                    <div class="marker-tooltip-comment">
                         ${commentText}
                     </div>
                 ` : ''}
                 
-                <!-- Чекбокс "Отмечено" внизу тултипа -->
-                <div id="mark-checkbox-${markerId}" style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    padding-top: 8px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
-                    margin-top: 8px;
-                ">
-                    <div class="tooltip-mark-checkbox" 
-                         data-marker-id="${markerId}"
-                         style="
-                             width: 16px;
-                             height: 16px;
-                             background: ${isMarked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-                             border: 2px solid ${isMarked ? '#4CAF50' : 'rgba(255, 255, 255, 0.2)'};
-                             border-radius: 4px;
-                             cursor: pointer;
-                             display: flex;
-                             align-items: center;
-                             justify-content: center;
-                             transition: all 0.2s ease;
-                         ">
+                <div id="mark-checkbox-${markerId}" class="marker-tooltip-checkbox-area">
+                    <div class="tooltip-mark-checkbox marker-tooltip-checkbox ${isMarked ? 'checked' : ''}" 
+                        data-marker-id="${markerId}">
                         ${isMarked ? `
-                            <div style="
-                                color: #4CAF50;
-                                font-size: 12px;
-                                font-weight: bold;
-                            ">✓</div>
+                            <div class="marker-tooltip-checkmark">✓</div>
                         ` : ''}
                     </div>
-                    <span class="tooltip-mark-label" 
-                          data-marker-id="${markerId}"
-                          style="
-                              color: #d0d0d0;
-                              font-size: 12px;
-                              font-family: Arial, sans-serif;
-                              cursor: pointer;
-                          ">
+                    <span class="tooltip-mark-label marker-tooltip-label" 
+                        data-marker-id="${markerId}">
                         Отмечено
                     </span>
                 </div>
@@ -1598,7 +1543,6 @@ function updateMarkerVisibilityOnMarkedChange(markerId) {
  * Переключение состояния "Отмечено" для маркера
  */
 function toggleMarkerMarked(markerId, checkboxElement) {
-    console.log(`toggleMarkerMarked вызван для маркера ${markerId}`);
     
     // Находим маркер во всех слоях
     const markerInfo = findMarkerById(markerId);
@@ -1618,8 +1562,6 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     const isCurrentlyMarked = markedMarkers[markerId] || false;
     const newState = !isCurrentlyMarked;
     
-    console.log(`Текущее состояние: ${isCurrentlyMarked}, новое состояние: ${newState}`);
-    
     // Обновляем состояние в текущем слое
     markedMarkers[markerId] = newState;
     
@@ -1635,12 +1577,10 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     // Обновляем чекбокс в тултипе
     if (checkboxElement) {
         if (newState) {
-            checkboxElement.style.background = 'rgba(76, 175, 80, 0.2)';
-            checkboxElement.style.borderColor = '#4CAF50';
-            checkboxElement.innerHTML = '<div style="color: #4CAF50; font-size: 12px; font-weight: bold;">✓</div>';
+            checkboxElement.classList.add('checked');
+            checkboxElement.innerHTML = '<div class="marker-tooltip-checkmark">✓</div>';
         } else {
-            checkboxElement.style.background = 'rgba(255, 255, 255, 0.1)';
-            checkboxElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            checkboxElement.classList.remove('checked');
             checkboxElement.innerHTML = '';
         }
     }
@@ -1659,7 +1599,6 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     
     // Сохраняем состояние
     saveMarkedMarkers();
-    console.log(`Сохранено состояние маркера ${markerId} слоя ${layer}: ${newState}`);
 }
 
 /**
@@ -1746,7 +1685,8 @@ function initLayerDataStructures() {
  * Инициализация видимости меток при загрузке
  */
 function initializeMarkersVisibility() {
-    allMarkers.forEach(marker => {
+    const allCurrentMarkers = getAllMarkersForCurrentLayer();
+    allCurrentMarkers.forEach(marker => {
         if (map.hasLayer(marker)) {
             map.removeLayer(marker);
         }
@@ -2091,64 +2031,27 @@ function setupUserMarkerEventHandlers(marker, data) {
             
             // Создаем HTML для тултипа
             const tooltipContent = `
-                <div style="max-width: 250px; padding: 10px; position: relative;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h4 style="margin: 0; color: white; font-size: 15px; flex: 1;">
+                <div class="marker-tooltip-container">
+                    <div class="marker-tooltip-header">
+                        <h4 class="marker-tooltip-title">
                             ${data.Название}
                         </h4>
                     </div>
                     ${commentText ? `
-                        <div style="
-                            border-top: 1px solid rgba(255, 255, 255, 0.3);
-                            padding-top: 8px;
-                            font-size: 13px;
-                            color: white;
-                            line-height: 1.4;
-                            margin-bottom: 10px;
-                        ">
+                        <div class="marker-tooltip-comment">
                             ${commentText}
                         </div>
                     ` : ''}
                     
-                    <!-- Чекбокс "Отмечено" внизу тултипа -->
-                    <div id="mark-checkbox-${markerId}" style="
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        padding-top: 8px;
-                        border-top: 1px solid rgba(255, 255, 255, 0.1);
-                        margin-top: 8px;
-                    ">
-                        <div class="tooltip-mark-checkbox" 
-                             data-marker-id="${markerId}"
-                             style="
-                                 width: 16px;
-                                 height: 16px;
-                                 background: ${isMarked ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.1)'};
-                                 border: 2px solid ${isMarked ? '#4CAF50' : 'rgba(255, 255, 255, 0.2)'};
-                                 border-radius: 4px;
-                                 cursor: pointer;
-                                 display: flex;
-                                 align-items: center;
-                                 justify-content: center;
-                                 transition: all 0.2s ease;
-                             ">
+                    <div id="mark-checkbox-${markerId}" class="marker-tooltip-checkbox-area">
+                        <div class="tooltip-mark-checkbox marker-tooltip-checkbox ${isMarked ? 'checked' : ''}" 
+                            data-marker-id="${markerId}">
                             ${isMarked ? `
-                                <div style="
-                                    color: #4CAF50;
-                                    font-size: 12px;
-                                    font-weight: bold;
-                                ">✓</div>
+                                <div class="marker-tooltip-checkmark">✓</div>
                             ` : ''}
                         </div>
-                        <span class="tooltip-mark-label" 
-                              data-marker-id="${markerId}"
-                              style="
-                                  color: #d0d0d0;
-                                  font-size: 12px;
-                                  font-family: Arial, sans-serif;
-                                  cursor: pointer;
-                              ">
+                        <span class="tooltip-mark-label marker-tooltip-label" 
+                            data-marker-id="${markerId}">
                             Отмечено
                         </span>
                     </div>
@@ -2255,8 +2158,6 @@ function deleteUserMarker(markerId) {
     // Сохраняем изменения
     saveUserMarkers();
     saveMarkedMarkers();
-    
-    console.log(`Пользовательская метка ${markerId} удалена из слоя ${foundLayer}`);
 }
 
 /**
@@ -2284,7 +2185,6 @@ function cleanupGhostMarkedMarkers() {
             if (!markerExists) {
                 delete layerMarkedMarkers[markerId];
                 cleanupCount++;
-                console.log(`Удалена запись об удаленной метке: ${markerId} слоя ${layer.id}`);
             }
         });
         
@@ -2333,120 +2233,55 @@ function createMarkerDialog(latlng) {
     
     // Создаем модальное окно
     const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        backdrop-filter: blur(5px);
-    `;
+    modal.className = 'create-marker-dialog-overlay';
     
     const dialog = document.createElement('div');
-    dialog.style.cssText = `
-        background: rgba(30, 33, 40, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 10px;
-        padding: 20px;
-        width: 800px;
-        max-width: 95%;
-        max-height: 90vh;
-        overflow: hidden;
-        color: white;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        position: relative;
-        display: flex;
-        flex-direction: column;
-    `;
+    dialog.className = 'create-marker-dialog';
     
     dialog.innerHTML = `
-        <h3 style="margin-top: 0; color: #4CAF50; text-align: center;">Создать новую метку</h3>
-        <div style="margin-bottom: 15px; font-size: 12px; color: #aaa; text-align: center;">
+        <h3 class="create-marker-dialog-title">Создать новую метку</h3>
+        <div class="coordinates-info">
             Координаты: [${Math.round(latlng.lng)}, ${Math.round(latlng.lat)}]
         </div>
         
-        <div style="display: flex; gap: 20px; flex: 1; min-height: 400px;">
+        <div class="dialog-layout">
             <!-- Левая панель: дерево фильтров -->
-            <div style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(255, 255, 255, 0.1); padding-right: 20px;">
-                <label style="display: block; margin-bottom: 10px; color: #ddd; font-size: 14px; font-weight: bold;">
+            <div class="filters-tree-panel">
+                <label class="filters-tree-label">
                     📋 Все фильтры
                 </label>
-                <div id="filters-tree" style="
-                    flex: 1;
-                    overflow-y: auto;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 8px;
-                    padding: 10px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                ">
+                <div id="filters-tree" class="filters-tree-container">
                     <!-- Дерево фильтров будет здесь -->
                 </div>
-                <div style="font-size: 11px; color: #aaa; margin-top: 10px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                <div class="filters-tree-tip">
                     <strong>💡 Подсказка:</strong> Нажмите на фильтр или подфильтр, чтобы добавить его к метке
                 </div>
             </div>
             
             <!-- Правая панель: форма создания метки -->
-            <div style="flex: 1; display: flex; flex-direction: column;">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
+            <div class="create-form-panel">
+                <div class="form-group">
+                    <label class="form-label">
                         Название <span style="color: #ff5757;">*</span>
                     </label>
-                    <input type="text" id="marker-name" 
-                           style="width: 95%; padding: 10px; background: rgba(255,255,255,0.1); 
-                                  border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
-                                  color: white; font-size: 14px;" 
-                           placeholder="Введите название метки" autofocus>
+                    <input type="text" id="marker-name" class="form-input" placeholder="Введите название метки" autofocus>
                 </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
+                <div class="form-group">
+                    <label class="form-label">
                         Фильтры (для экспорта)
                     </label>
                     
                     <!-- Чипсы выбранных фильтров -->
-                    <div id="filter-chips-container" style="
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 6px;
-                        margin-bottom: 10px;
-                        min-height: 40px;
-                        padding: 8px;
-                        background: rgba(0, 0, 0, 0.2);
-                        border-radius: 5px;
-                        border: 1px dashed rgba(255, 255, 255, 0.1);
-                    "></div>
+                    <div id="filter-chips-container" class="filter-chips-container"></div>
                     
                     <!-- Поиск фильтров -->
-                    <div style="position: relative; margin-bottom: 10px;">
-                        <input type="text" id="filter-search" 
-                               style="width: 95%; padding: 8px 12px; background: rgba(255,255,255,0.1); 
-                                      border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
-                                      color: white; font-size: 13px;" 
-                               placeholder="Поиск фильтров...">
-                        <div id="search-results" style="
-                            position: absolute;
-                            top: 100%;
-                            left: 0;
-                            right: 0;
-                            background: rgba(40, 44, 52, 0.98);
-                            border: 1px solid rgba(255, 255, 255, 0.2);
-                            border-radius: 5px;
-                            margin-top: 2px;
-                            max-height: 200px;
-                            overflow-y: auto;
-                            display: none;
-                            z-index: 10000;
-                            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-                        "></div>
+                    <div class="search-container">
+                        <input type="text" id="filter-search" class="search-input" placeholder="Поиск фильтров...">
+                        <div id="search-results" class="search-results"></div>
                     </div>
                     
-                    <div style="font-size: 11px; color: #aaa; margin-top: 5px; line-height: 1.4;">
+                    <div class="search-info">
                         <strong>Информация:</strong><br>
                         • Выберите фильтры из дерева слева или используйте поиск<br>
                         • Все созданные метки считаются как <span style="color: #4CAF50; font-weight: bold;">"Мои метки"</span>
@@ -2454,40 +2289,17 @@ function createMarkerDialog(latlng) {
                 </div>
                 
                 <div style="margin-bottom: 20px; flex: 1;">
-                    <label style="display: block; margin-bottom: 5px; color: #ddd; font-size: 14px;">
+                    <label class="form-label">
                         Комментарий
                     </label>
-                    <textarea id="marker-comment" 
-                              style="width: 95%; height: 100%; min-height: 120px; padding: 10px; background: rgba(255,255,255,0.1); 
-                                     border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; 
-                                     color: white; font-size: 14px; resize: vertical;" 
-                              placeholder="Дополнительная информация (необязательно). Ставьте <br> для новой строки."></textarea>
+                    <textarea id="marker-comment" class="form-textarea" placeholder="Дополнительная информация (необязательно). Ставьте <br> для новой строки."></textarea>
                 </div>
             </div>
         </div>
         
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
-            <button id="cancel-marker" style="
-                padding: 10px 20px;
-                background: rgba(255, 87, 87, 0.1);
-                border: 1px solid rgba(255, 87, 87, 0.3);
-                border-radius: 5px;
-                color: #ff5757;
-                cursor: pointer;
-                font-size: 14px;
-                transition: all 0.2s ease;
-            ">Отмена</button>
-            <button id="save-marker" style="
-                padding: 10px 20px;
-                background: rgba(76, 175, 80, 0.2);
-                border: 1px solid #4CAF50;
-                border-radius: 5px;
-                color: #4CAF50;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: bold;
-                transition: all 0.2s ease;
-            ">Создать метку</button>
+        <div class="dialog-buttons">
+            <button id="cancel-marker" class="cancel-button">Отмена</button>
+            <button id="save-marker" class="save-button">Создать метку</button>
         </div>
     `;
     
@@ -2512,21 +2324,10 @@ function createMarkerDialog(latlng) {
         item.dataset.isSubfilter = isSubfilter;
         if (parentName) item.dataset.parentName = parentName;
         
-        item.style.cssText = `
-            padding: ${isSubfilter ? '6px 12px 6px 30px' : '8px 12px'};
-            margin: ${isSubfilter ? '2px 0' : '4px 0'};
-            cursor: pointer;
-            font-size: ${isSubfilter ? '12px' : '13px'};
-            color: ${isSubfilter ? 'rgba(208, 208, 208, 0.9)' : '#d0d0d0'};
-            background: ${selectedFilters.includes(filterName) ? 'rgba(76, 175, 80, 0.15)' : 'transparent'};
-            border: 1px solid ${selectedFilters.includes(filterName) ? 'rgba(76, 175, 80, 0.3)' : 'transparent'};
-            border-radius: 5px;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        `;
+        item.className = 'filter-tree-item' + (isSubfilter ? ' subfilter' : '');
+        if (selectedFilters.includes(filterName)) {
+            item.classList.add('selected');
+        }
         
         // Текст фильтра
         const textSpan = document.createElement('span');
@@ -2535,57 +2336,39 @@ function createMarkerDialog(latlng) {
         // Иконка статуса
         const statusIcon = document.createElement('span');
         statusIcon.innerHTML = selectedFilters.includes(filterName) ? '✓' : '+';
-        statusIcon.style.cssText = `
-            color: ${selectedFilters.includes(filterName) ? '#4CAF50' : 'rgba(255, 255, 255, 0.3)'};
-            font-size: 14px;
-            font-weight: bold;
-            margin-left: 8px;
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: ${selectedFilters.includes(filterName) ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 255, 255, 0.05)'};
-            transition: all 0.2s ease;
-        `;
+        statusIcon.className = 'tree-item-status';
+        if (selectedFilters.includes(filterName)) {
+            statusIcon.classList.add('selected');
+        }
         
         item.appendChild(textSpan);
         item.appendChild(statusIcon);
         
         // Эффекты при наведении
         item.addEventListener('mouseover', () => {
-            item.style.background = selectedFilters.includes(filterName) 
-                ? 'rgba(76, 175, 80, 0.25)' 
-                : 'rgba(255, 255, 255, 0.1)';
-            item.style.borderColor = selectedFilters.includes(filterName)
-                ? 'rgba(76, 175, 80, 0.5)'
-                : 'rgba(255, 255, 255, 0.2)';
-            statusIcon.style.background = selectedFilters.includes(filterName)
-                ? 'rgba(76, 175, 80, 0.3)'
-                : 'rgba(255, 255, 255, 0.1)';
+            item.classList.add('hover');
+            if (selectedFilters.includes(filterName)) {
+                item.classList.add('selected-hover');
+                statusIcon.classList.add('selected-hover');
+            }
         });
-        
+
         item.addEventListener('mouseout', () => {
-            item.style.background = selectedFilters.includes(filterName) 
-                ? 'rgba(76, 175, 80, 0.15)' 
-                : 'transparent';
-            item.style.borderColor = selectedFilters.includes(filterName)
-                ? 'rgba(76, 175, 80, 0.3)'
-                : 'transparent';
-            statusIcon.style.background = selectedFilters.includes(filterName)
-                ? 'rgba(76, 175, 80, 0.2)'
-                : 'rgba(255, 255, 255, 0.05)';
+            item.classList.remove('hover');
+            if (selectedFilters.includes(filterName)) {
+                item.classList.remove('selected-hover');
+                statusIcon.classList.remove('selected-hover');
+            }
         });
-        
-        // Обработчик клика
-        item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleFilter(filterName);
-        });
-        
-        return item;
-    }
+                
+                // Обработчик клика
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFilter(filterName);
+                });
+                
+                return item;
+            }
     
     // Функция для построения дерева фильтров
     function buildFilterTree() {
@@ -2610,11 +2393,7 @@ function createMarkerDialog(latlng) {
                 // Добавляем разделитель между группами фильтров
                 if (sortedMainFilters.indexOf(mainFilter) !== sortedMainFilters.length - 1) {
                     const separator = document.createElement('div');
-                    separator.style.cssText = `
-                        height: 1px;
-                        background: rgba(255, 255, 255, 0.05);
-                        margin: 10px 0;
-                    `;
+                    separator.className = 'filters-tree-separator';
                     filtersTreeContainer.appendChild(separator);
                 }
             }
@@ -2625,19 +2404,6 @@ function createMarkerDialog(latlng) {
     function createFilterChip(filterName) {
         const chip = document.createElement('div');
         chip.className = 'filter-chip';
-        chip.style.cssText = `
-            display: inline-flex;
-            align-items: center;
-            background: rgba(76, 175, 80, 0.15);
-            border: 1px solid rgba(76, 175, 80, 0.3);
-            border-radius: 16px;
-            padding: 4px 10px 4px 12px;
-            font-size: 12px;
-            color: #4CAF50;
-            cursor: default;
-            transition: all 0.2s ease;
-            user-select: none;
-        `;
         
         // Текст фильтра
         const chipText = document.createElement('span');
@@ -2648,34 +2414,6 @@ function createMarkerDialog(latlng) {
         const removeBtn = document.createElement('span');
         removeBtn.innerHTML = '✕';
         removeBtn.className = 'remove-filter-chip';
-        removeBtn.style.cssText = `
-            cursor: pointer;
-            font-size: 14px;
-            color: rgba(255, 87, 87, 0.7);
-            margin-left: 2px;
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s ease;
-        `;
-        
-        // Обработчики для чипса
-        chip.addEventListener('mouseover', () => {
-            chip.style.background = 'rgba(76, 175, 80, 0.25)';
-            chip.style.borderColor = '#4CAF50';
-            removeBtn.style.color = '#ff5757';
-            removeBtn.style.background = 'rgba(255, 87, 87, 0.1)';
-        });
-        
-        chip.addEventListener('mouseout', () => {
-            chip.style.background = 'rgba(76, 175, 80, 0.15)';
-            chip.style.borderColor = 'rgba(76, 175, 80, 0.3)';
-            removeBtn.style.color = 'rgba(255, 87, 87, 0.7)';
-            removeBtn.style.background = 'transparent';
-        });
         
         // Обработчик удаления
         removeBtn.addEventListener('click', (e) => {
@@ -2697,15 +2435,8 @@ function createMarkerDialog(latlng) {
         // Если нет выбранных фильтров, показываем заглушку
         if (selectedFilters.length === 0) {
             const placeholder = document.createElement('div');
+            placeholder.className = 'filters-chips-placeholder';
             placeholder.textContent = 'Нет выбранных фильтров';
-            placeholder.style.cssText = `
-                color: rgba(255, 255, 255, 0.3);
-                font-size: 12px;
-                font-style: italic;
-                padding: 12px;
-                width: 100%;
-                text-align: center;
-            `;
             filterChipsContainer.appendChild(placeholder);
         } else {
             // Добавляем чипсы
@@ -2786,33 +2517,14 @@ function createMarkerDialog(latlng) {
         Object.keys(groupedResults).sort().forEach(group => {
             // Заголовок группы
             const groupHeader = document.createElement('div');
-            groupHeader.style.cssText = `
-                padding: 6px 12px;
-                background: rgba(0, 0, 0, 0.3);
-                color: rgba(255, 255, 255, 0.5);
-                font-size: 11px;
-                font-weight: bold;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            `;
+            groupHeader.className = 'search-group-header';
             groupHeader.textContent = group;
             searchResults.appendChild(groupHeader);
             
             // Элементы группы
             groupedResults[group].forEach(result => {
                 const item = document.createElement('div');
-                item.style.cssText = `
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    font-size: 13px;
-                    color: #d0d0d0;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-                    transition: all 0.2s ease;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                `;
+                item.className = 'search-result-item';
                 
                 // Текст с подсветкой
                 const textSpan = document.createElement('span');
@@ -2832,28 +2544,10 @@ function createMarkerDialog(latlng) {
                 // Иконка добавления
                 const addIcon = document.createElement('span');
                 addIcon.innerHTML = '+';
-                addIcon.style.cssText = `
-                    color: rgba(76, 175, 80, 0.7);
-                    font-size: 16px;
-                    font-weight: bold;
-                    margin-left: 8px;
-                `;
+                addIcon.className = 'search-add-icon';
                 
                 item.appendChild(textSpan);
                 item.appendChild(addIcon);
-                
-                // Эффекты при наведении
-                item.addEventListener('mouseover', () => {
-                    item.style.background = 'rgba(76, 175, 80, 0.15)';
-                    item.style.color = '#4CAF50';
-                    addIcon.style.color = '#4CAF50';
-                });
-                
-                item.addEventListener('mouseout', () => {
-                    item.style.background = 'transparent';
-                    item.style.color = '#d0d0d0';
-                    addIcon.style.color = 'rgba(76, 175, 80, 0.7)';
-                });
                 
                 // Обработчик клика
                 item.addEventListener('click', () => {
@@ -3001,8 +2695,11 @@ function updateCreateModeCursor() {
         // Устанавливаем курсор-крестик для карты
         mapContainer.style.cursor = 'crosshair';
         
-        // Устанавливаем курсор для всех маркеров
-        allMarkers.forEach(marker => {
+        // Получаем ВСЕ маркеры текущего слоя (обычные + пользовательские)
+        const allCurrentMarkers = getAllMarkersForCurrentLayer();
+        
+        // Устанавливаем курсор для всех маркеров текущего слоя
+        allCurrentMarkers.forEach(marker => {
             const element = marker.getElement();
             if (element) {
                 element.style.cursor = 'pointer';
@@ -3012,8 +2709,9 @@ function updateCreateModeCursor() {
         // Возвращаем обычный курсор
         mapContainer.style.cursor = '';
         
-        // Возвращаем обычные курсоры для маркеров
-        allMarkers.forEach(marker => {
+        // Возвращаем обычные курсоры для маркеров текущего слоя
+        const allCurrentMarkers = getAllMarkersForCurrentLayer();
+        allCurrentMarkers.forEach(marker => {
             const element = marker.getElement();
             if (element) {
                 element.style.cursor = '';
@@ -3036,35 +2734,14 @@ function exportUserMarkersToJSON() {
     
     // Создаем модальное окно
     const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        backdrop-filter: blur(5px);
-    `;
+    modal.className = 'create-marker-dialog-overlay';
     
     const dialog = document.createElement('div');
-    dialog.style.cssText = `
-        background: rgba(30, 33, 40, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        border-radius: 10px;
-        padding: 20px;
-        width: 450px;
-        max-width: 90%;
-        color: white;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    `;
+    dialog.className = 'export-dialog';
     
     dialog.innerHTML = `
-        <h3 style="margin-top: 0; color: #4CAF50; text-align: center;">Экспорт пользовательских меток</h3>
-        <div style="margin-bottom: 15px; font-size: 13px; color: #aaa; text-align: center;">
+       <h3 class="export-dialog-title">Экспорт пользовательских меток</h3>
+        <div class="export-info">
             Текущий слой: <strong style="color: white;">${getCurrentLayerName()}</strong><br>
             Всего меток для экспорта: <strong style="color: white;">${currentUserMarkers.length}</strong>
         </div>
@@ -3072,67 +2749,30 @@ function exportUserMarkersToJSON() {
             Выберите действие для экспорта ваших меток
         </div>
         
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <div class="export-actions">
             <!-- Зеленая кнопка - Экспортировать JSON -->
-            <button id="export-only-btn" style="
-                padding: 12px 20px;
-                background: rgba(76, 175, 80, 0.15);
-                border: 1px solid #4CAF50;
-                border-radius: 6px;
-                color: #4CAF50;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                transition: all 0.2s ease;
-            ">
+            <button id="export-only-btn" class="export-button export-json-button">
                 <span style="font-size: 16px;">📁</span>
                 Экспортировать JSON
             </button>
             
-            <div style="font-size: 11px; color: #aaa; text-align: center; margin: 0 10px;">
+            <div class="export-note">
                 Экспортирует метки текущего слоя в JSON файл без удаления
             </div>
             
             <!-- Желтая кнопка - Экспортировать и удалить -->
-            <button id="export-delete-btn" style="
-                padding: 12px 20px;
-                background: rgba(255, 193, 7, 0.15);
-                border: 1px solid #FFC107;
-                border-radius: 6px;
-                color: #FFC107;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                transition: all 0.2s ease;
-            ">
+            <button id="export-delete-btn" class="export-button export-delete-button">
                 <span style="font-size: 16px;">⚠️</span>
                 Экспортировать и удалить метки
             </button>
             
-            <div style="font-size: 11px; color: #ff9800; text-align: center; margin: 0 10px;">
+            <div class="warning-note">
                 Экспортирует метки текущего слоя в JSON и затем удаляет их с карты
             </div>
         </div>
         
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button id="cancel-export" style="
-                padding: 10px 20px;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 5px;
-                color: #d0d0d0;
-                cursor: pointer;
-                font-size: 14px;
-                transition: all 0.2s ease;
-            ">Отмена</button>
+            <button id="cancel-export" class="export-cancel-button">Отмена</button>
         </div>
     `;
     
@@ -3143,36 +2783,6 @@ function exportUserMarkersToJSON() {
     const exportOnlyBtn = dialog.querySelector('#export-only-btn');
     const exportDeleteBtn = dialog.querySelector('#export-delete-btn');
     const cancelBtn = dialog.querySelector('#cancel-export');
-    
-    exportOnlyBtn.addEventListener('mouseover', function() {
-        this.style.background = 'rgba(76, 175, 80, 0.25)';
-        this.style.transform = 'translateY(-1px)';
-    });
-    
-    exportOnlyBtn.addEventListener('mouseout', function() {
-        this.style.background = 'rgba(76, 175, 80, 0.15)';
-        this.style.transform = 'translateY(0)';
-    });
-    
-    exportDeleteBtn.addEventListener('mouseover', function() {
-        this.style.background = 'rgba(255, 193, 7, 0.25)';
-        this.style.transform = 'translateY(-1px)';
-    });
-    
-    exportDeleteBtn.addEventListener('mouseout', function() {
-        this.style.background = 'rgba(255, 193, 7, 0.15)';
-        this.style.transform = 'translateY(0)';
-    });
-    
-    cancelBtn.addEventListener('mouseover', function() {
-        this.style.background = 'rgba(255, 255, 255, 0.2)';
-        this.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-    });
-    
-    cancelBtn.addEventListener('mouseout', function() {
-        this.style.background = 'rgba(255, 255, 255, 0.1)';
-        this.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-    });
     
     // Функция для экспорта JSON (обновленная для работы с currentUserMarkers)
     const performJSONExport = (shouldDelete = false, formatted = false) => {
@@ -3541,6 +3151,18 @@ function updateAllFiltersCheckbox() {
 // ============================================
 
 /**
+ * Создание элемента для отображения координат
+ */
+function createCoordsDisplay() {
+    const coordsDisplay = document.createElement('div');
+    coordsDisplay.id = 'coordsDisplay';
+    coordsDisplay.className = 'coords-display hidden';
+    coordsDisplay.textContent = 'Координаты: отключены';    
+    document.body.appendChild(coordsDisplay);
+    return coordsDisplay;
+}
+
+/**
  * Настройка переключателя фильтра
  */
 function setupFilterToggle(checkbox, checkmark, filterName, filterElement) {
@@ -3662,9 +3284,7 @@ function fillSubfiltersContainer(parentFilter, container) {
         const subfilterLabelContainer = L.DomUtil.create('div', 'subfilter-label-container', subfilterGroup);
         const subfilterLabel = L.DomUtil.create('span', 'subfilter-label', subfilterLabelContainer);
         subfilterLabel.textContent = subfilterName;
-        subfilterLabel.style.fontSize = '12px';
-        subfilterLabel.style.color = 'rgba(208, 208, 208, 0.9)';
-        subfilterLabel.style.paddingLeft = '10px';
+        subfilterLabel.className += ' subfilter-label-text';
         
         const subfilterCheckbox = L.DomUtil.create('div', 'subfilter-checkbox', subfilterGroup);
         subfilterCheckbox.title = `Показать/скрыть ${subfilterName}`;
@@ -3705,6 +3325,19 @@ function fillSubfiltersContainer(parentFilter, container) {
     });
 }
 
+/**
+ * Создание элемента для отображения координат
+ */
+function createCoordsDisplay() {
+    const coordsDisplay = document.createElement('div');
+    coordsDisplay.id = 'coordsDisplay';
+    coordsDisplay.className = 'coords-display hidden';
+    coordsDisplay.textContent = 'Координаты: отключены';
+    
+    document.body.appendChild(coordsDisplay);
+    return coordsDisplay;
+}
+
 // ============================================
 // КАСТОМНЫЕ КОНТРОЛЫ
 // ============================================
@@ -3733,71 +3366,34 @@ const ToolsControl = L.Control.extend({
         
         // === СОЗДАЕМ ИНСТРУМЕНТЫ ===
         
-        // 1. Переключатель координат (перенесен из CoordsToggleControl)
+        // 1. Переключатель координат
         const coordsGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
-        
-        // Заголовок с иконкой для координат
         const coordsRow = L.DomUtil.create('div', 'tool-row', coordsGroup);
-        coordsRow.style.display = 'flex';
-        coordsRow.style.alignItems = 'center';
-        coordsRow.style.justifyContent = 'space-between';
-        coordsRow.style.width = '100%';
-        
         const coordsClickableArea = L.DomUtil.create('div', 'tool-clickable-area', coordsRow);
-        coordsClickableArea.style.display = 'flex';
-        coordsClickableArea.style.alignItems = 'center';
-        coordsClickableArea.style.flex = '1';
-        
         const coordsLabel = L.DomUtil.create('span', 'tool-label', coordsClickableArea);
         coordsLabel.textContent = "Координаты";
-        
         const coordsCheckbox = L.DomUtil.create('div', 'tool-checkbox', coordsRow);
         coordsCheckbox.title = "Показать/скрыть координаты курсора";
-        
         const coordsCheckmark = L.DomUtil.create('div', 'tool-checkmark', coordsCheckbox);
         
         // 2. Переключатель "Скрыть отмеченные"
-        const hideCompletedGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
-        
+        const hideCompletedGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);   
         const hideCompletedRow = L.DomUtil.create('div', 'tool-row', hideCompletedGroup);
-        hideCompletedRow.style.display = 'flex';
-        hideCompletedRow.style.alignItems = 'center';
-        hideCompletedRow.style.justifyContent = 'space-between';
-        hideCompletedRow.style.width = '100%';
-        
         const hideClickableArea = L.DomUtil.create('div', 'tool-clickable-area', hideCompletedRow);
-        hideClickableArea.style.display = 'flex';
-        hideClickableArea.style.alignItems = 'center';
-        hideClickableArea.style.flex = '1';
-        
         const hideLabel = L.DomUtil.create('span', 'tool-label', hideClickableArea);
         hideLabel.textContent = "Скрыть отмеченные";
-        
         const hideCheckbox = L.DomUtil.create('div', 'tool-checkbox', hideCompletedRow);
         hideCheckbox.title = "Скрывать отмеченные метки";
-        
         const hideCheckmark = L.DomUtil.create('div', 'tool-checkmark', hideCheckbox);
 
         // 3. Переключатель "Создать/удалить метки"
-        const createMarkersGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
-            
+        const createMarkersGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);    
         const createMarkersRow = L.DomUtil.create('div', 'tool-row', createMarkersGroup);
-        createMarkersRow.style.display = 'flex';
-        createMarkersRow.style.alignItems = 'center';
-        createMarkersRow.style.justifyContent = 'space-between';
-        createMarkersRow.style.width = '100%';
-            
         const createClickableArea = L.DomUtil.create('div', 'tool-clickable-area', createMarkersRow);
-        createClickableArea.style.display = 'flex';
-        createClickableArea.style.alignItems = 'center';
-        createClickableArea.style.flex = '1';
-            
         const createLabel = L.DomUtil.create('span', 'tool-label', createClickableArea);
-        createLabel.textContent = "Создать/удалить метки";
-            
+        createLabel.textContent = "Создать/удалить метки";  
         const createCheckbox = L.DomUtil.create('div', 'tool-checkbox', createMarkersRow);
-        createCheckbox.title = "Режим создания и удаления пользовательских меток";
-            
+        createCheckbox.title = "Режим создания и удаления пользовательских меток";  
         const createCheckmark = L.DomUtil.create('div', 'tool-checkmark', createCheckbox);
 
         // Устанавливаем начальное состояние
@@ -3840,34 +3436,9 @@ const ToolsControl = L.Control.extend({
         // 4. Кнопка "Снять все отметки"
         const clearAllMarksGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
         
-        const clearAllButton = L.DomUtil.create('div', 'tool-button', clearAllMarksGroup);
+        const clearAllButton = L.DomUtil.create('div', 'tool-button clear-all', clearAllMarksGroup);
         clearAllButton.textContent = "Снять все отметки";
         clearAllButton.title = "Сбросить все отмеченные метки";
-        clearAllButton.style.cssText = `
-            width: 85%;
-            padding: 8px 12px;
-            background: rgba(255, 87, 87, 0.1);
-            border: 1px solid rgba(255, 87, 87, 0.3);
-            border-radius: 4px;
-            color: #ff5757;
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 5px;
-            transition: all 0.2s ease;
-        `;
-        
-        // Эффекты при наведении
-        clearAllButton.addEventListener('mouseover', function() {
-            this.style.background = 'rgba(255, 87, 87, 0.2)';
-            this.style.borderColor = '#ff5757';
-        });
-        
-        clearAllButton.addEventListener('mouseout', function() {
-            this.style.background = 'rgba(255, 87, 87, 0.1)';
-            this.style.borderColor = 'rgba(255, 87, 87, 0.3)';
-        });
         
         clearAllButton.addEventListener('click', function() {
             clearAllMarkedMarkers();
@@ -3876,35 +3447,9 @@ const ToolsControl = L.Control.extend({
 
         // 5. Кнопка "Экспортировать мои метки"
         const exportGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
-
         const exportButton = L.DomUtil.create('div', 'tool-button', exportGroup);
         exportButton.textContent = "Экспортировать метки";
         exportButton.title = "Экспортировать все мои метки в JSON файл";
-        exportButton.style.cssText = `
-            width: 85%;
-            padding: 8px 12px;
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid rgba(76, 175, 80, 0.3);
-            border-radius: 4px;
-            color: #4CAF50;
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 5px;
-            transition: all 0.2s ease;
-        `;
-
-        // Эффекты при наведении для зеленой кнопки
-        exportButton.addEventListener('mouseover', function() {
-            this.style.background = 'rgba(76, 175, 80, 0.2)';
-            this.style.borderColor = '#4CAF50';
-        });
-
-        exportButton.addEventListener('mouseout', function() {
-            this.style.background = 'rgba(76, 175, 80, 0.1)';
-            this.style.borderColor = 'rgba(76, 175, 80, 0.3)';
-        });
 
         exportButton.addEventListener('click', function() {
             exportUserMarkersToJSON();
@@ -3917,6 +3462,10 @@ const ToolsControl = L.Control.extend({
         
         const updateCoordinates = (e) => {
             if (!coordsEnabled) return;
+            
+            const coordsDisplay = document.getElementById('coordsDisplay');
+            if (!coordsDisplay) return;
+            
             coordsDisplay.textContent = 
                 `Координаты: [${Math.round(e.latlng.lng)}, ${Math.round(e.latlng.lat)}]`;
             coordsDisplay.classList.remove('hidden');
@@ -3961,11 +3510,9 @@ const ToolsControl = L.Control.extend({
             if (hideCompletedEnabled) {
                 hideCheckmark.classList.add('active');
                 hideCheckbox.classList.add('active');
-                console.log("Режим 'Скрыть отмеченные' включен");
             } else {
                 hideCheckmark.classList.remove('active');
                 hideCheckbox.classList.remove('active');
-                console.log("Режим 'Скрыть отмеченные' выключен");
             }
             
             // Обновляем видимость всех маркеров
@@ -4029,15 +3576,7 @@ const FiltersToggleControl = L.Control.extend({
         filtersConfig.forEach(filter => {
             const filterGroup = L.DomUtil.create('div', 'filter-group', filtersPanel);
             const filterRow = L.DomUtil.create('div', 'filter-row', filterGroup);
-            filterRow.style.display = 'flex';
-            filterRow.style.alignItems = 'center';
-            filterRow.style.justifyContent = 'space-between';
-            filterRow.style.width = '100%';
-            
             const clickableArea = L.DomUtil.create('div', 'filter-clickable-area', filterRow);
-            clickableArea.style.display = 'flex';
-            clickableArea.style.alignItems = 'center';
-            clickableArea.style.flex = '1';
             clickableArea.style.cursor = filter.hasSubfilters ? 'pointer' : 'default';
             
             if (filter.icon) {
@@ -4140,16 +3679,8 @@ const SpecialMarksControl = L.Control.extend({
             }
             
             const markGroup = L.DomUtil.create('div', 'special-mark-group', specialMarksPanel);
-            const markRow = L.DomUtil.create('div', 'special-mark-row', markGroup);
-            markRow.style.display = 'flex';
-            markRow.style.alignItems = 'center';
-            markRow.style.justifyContent = 'space-between';
-            markRow.style.width = '100%';
-            
+            const markRow = L.DomUtil.create('div', 'special-mark-row', markGroup);            
             const clickableArea = L.DomUtil.create('div', 'special-mark-clickable-area', markRow);
-            clickableArea.style.display = 'flex';
-            clickableArea.style.alignItems = 'center';
-            clickableArea.style.flex = '1';
             
             if (mark.hasSubmarks && mark.submarks && mark.submarks.length > 0) {
                 clickableArea.style.cursor = 'pointer';
@@ -4566,6 +4097,9 @@ function enableSpecialMarksScroll() {
 function initializeApp() {
     console.log('Инициализация приложения...');
     
+    // Создаем элемент для координат
+    createCoordsDisplay();
+
     // Инициализируем структуры данных для слоёв
     initLayerDataStructures();
     
@@ -4703,12 +4237,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const checkboxElement = tooltip.querySelector('.tooltip-mark-checkbox');
             if (checkboxElement) {
                 if (newState) {
-                    checkboxElement.style.background = 'rgba(76, 175, 80, 0.2)';
-                    checkboxElement.style.borderColor = '#4CAF50';
-                    checkboxElement.innerHTML = '<div style="color: #4CAF50; font-size: 12px; font-weight: bold;">✓</div>';
+                    checkboxElement.classList.add('checked');
+                    checkboxElement.innerHTML = '<div class="marker-tooltip-checkmark">✓</div>';
                 } else {
-                    checkboxElement.style.background = 'rgba(255, 255, 255, 0.1)';
-                    checkboxElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    checkboxElement.classList.remove('checked');
                     checkboxElement.innerHTML = '';
                 }
             }
