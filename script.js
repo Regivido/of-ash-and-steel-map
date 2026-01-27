@@ -1,12 +1,8 @@
 // ============================================
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И КОНСТАНТЫ
 // ============================================
-
-// Константы для карты
 const IMAGE_BOUNDS = [[0, 0], [800, 800]];
 const IMAGE_URL = 'assets/worldmap.webp';
-
-// Глобальные переменные
 let map;
 let markersByFilter = {
     'Алтари': [],
@@ -48,26 +44,15 @@ let subfilters = {
     'Травы': ['Бык', 'Здравица', 'Зорька', 'Ловчанка', 'Мул', 'Лунный побег'],
     'Характеристики': ['Сила', 'Ловкость', 'Выносливость', 'Проницательность', 'Крепкость', 'Свободные очки', 'Навыки']
 };
-// Состояния
 let filterStates = {};
 let subfilterStates = {};
-// Хранилище состояний "отмечено" для маркеров
 let markedMarkers = {};
 let hideCompletedEnabled = false;
-// Состояния инструментов
 let coordsEnabled = false;
-
-// Режим создания меток
 let createMarkersMode = false;
-
-// Счетчик для уникальных ID пользовательских меток
 let userMarkerCounter = 0;
-
-// Элементы DOM
 const filterElements = {};
 const subfilterElements = {};
-
-// Иконки маркеров
 const markerIcons = {
     'default': L.icon({
         iconUrl: 'assets/Unknown.png',
@@ -77,8 +62,6 @@ const markerIcons = {
         tooltipAnchor: [15, 0]
     })
 };
-
-// Конфигурации
 const filtersConfig = [
     { name: 'Все фильтры', color: '#2196F3', special: true, icon: null },
     { name: 'Алтари', color: '#4CAF50', icon: 'assets/altar.png', hasSubfilters: false },
@@ -109,7 +92,6 @@ const filtersConfig = [
     { name: 'Хряк контрабандистов', color: '#4CAF50', icon: 'assets/pig.png', hasSubfilters: false },
     { name: 'Мои метки', color: '#4CAF50', icon: 'assets/marker.png', hasSubfilters: false }
 ];
-
 const specialMarksConfig = [
     { name: 'Король жуков', description: 'Появляется после раздавливания 20 жуков. Даст Зелье Умения', completed: false, hasSubmarks: false, submarks: [] },
     { name: 'Бонус за еду +СИЛ', description: 'После съедания 20 единиц', completed: false, hasSubmarks: true, submarks: ['Свежие булочки с мясом', 'Пирожки с яблоком', 'Мощное мясное рагу'] },
@@ -118,10 +100,8 @@ const specialMarksConfig = [
     { name: 'Бонус за еду +ПРЦ', description: 'После съедания 20 единиц', completed: false, hasSubmarks: true, submarks: ['Морковь', 'Пирожки с грибами'] },
     { name: 'Бонус за еду +КРП', description: 'После съедания 20 Мясо со специями', completed: false, hasSubmarks: false, submarks: [] }
 ];
-
 let specialMarksStates = {};
 let specialSubmarksStates = {};
-// Конфигурация слоёв (карт)
 const layersConfig = [
     {
         id: 'worldmap',
@@ -144,7 +124,6 @@ const layersConfig = [
         defaultZoom: 0
     }
 ];
-// Глобальные переменные для слоёв
 let currentLayer = 'worldmap';
 let layerImageOverlays = {};
 let markersByLayer = {
@@ -163,12 +142,7 @@ let markedMarkersByLayer = {
 // ============================================
 // ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ КАРТЫ
 // ============================================
-
-/**
- * Инициализация карты Leaflet
- */
 function initMap() {
-    // Получаем конфиг текущего слоя
     const currentLayerConfig = layersConfig.find(l => l.id === currentLayer);
     
     map = L.map('map', {
@@ -179,27 +153,20 @@ function initMap() {
         doubleClickZoom: false,
     });
     
-    // Настраиваем контролы
     map.removeControl(map.zoomControl);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Добавляем изображение карты (будет обновлено в initLayers)
     L.imageOverlay(IMAGE_URL, IMAGE_BOUNDS).addTo(map);
     
-    // Устанавливаем вид по умолчанию для текущего слоя
     const defaultZoom = currentLayerConfig ? currentLayerConfig.defaultZoom : 0;
     map.setView([400, 400], defaultZoom);
     
-    // Инициализация иконок
     initMarkerIcons();
-    
-    // Инициализация состояний
+
     initAllStates();
-    
-    // Загружаем сохраненное состояние карты
+
     loadMapState();
-    
-    // Настраиваем обработчики событий
+
     setupEventListeners();
 }
 
@@ -252,11 +219,9 @@ function initMarkerIcons() {
  * Настройка обработчиков событий карты
  */
 function setupEventListeners() {
-    // Сохранение состояния карты
     map.on('moveend', saveMapState);
     map.on('zoomend', saveMapState);
     
-    // Клик по карте - закрытие тултипов
     map.on('click', function(e) {
         const target = e.originalEvent.target;
         const isMarker = target.closest('.leaflet-marker-icon');
@@ -267,28 +232,24 @@ function setupEventListeners() {
         const isSpecialMarksPanel = target.closest('.special-marks-container');
         const isToolsPanel = target.closest('.tools-container');
         
-        // В режиме создания меток - создаем новую метку
         if (createMarkersMode && !isMarker && !isTooltip && !isCheckbox && !isLabel && 
             !isFiltersPanel && !isSpecialMarksPanel && !isToolsPanel) {
             createMarkerDialog(e.latlng);
             return;
         }
         
-        // Закрываем тултипы только при клике вне элементов интерфейса
         if (!isMarker && !isTooltip && !isCheckbox && !isLabel && 
             !isFiltersPanel && !isSpecialMarksPanel && !isToolsPanel) {
             closeAllTooltips();
         }
     });
     
-    // Закрытие тултипов по клавише ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' || e.key === 'Esc') {
             closeAllTooltips();
         }
     });
     
-    // Сохранение перед закрытием страницы
     window.addEventListener('beforeunload', function() {
         saveMapState();
         saveFilterStates();
@@ -298,7 +259,6 @@ function setupEventListeners() {
         saveUserMarkers();
     });
     
-    // Периодическое сохранение
     setInterval(function() {
         saveMapState();
         saveFilterStates();
@@ -312,19 +272,12 @@ function setupEventListeners() {
 // ============================================
 // УПРАВЛЕНИЕ СЛОЯМИ
 // ============================================
-
-/**
- * Инициализация всех слоёв
- */
 function initLayers() {
     layersConfig.forEach(layer => {
-        // Создаем ImageOverlay для каждого слоя
         const imageOverlay = L.imageOverlay(layer.imageUrl, layer.bounds);
         layerImageOverlays[layer.id] = imageOverlay;
         
-        // Скрываем все слои кроме текущего
         if (layer.id !== currentLayer) {
-            // Просто не добавляем на карту
         } else {
             imageOverlay.addTo(map);
         }
@@ -337,36 +290,26 @@ function initLayers() {
 function switchLayer(layerId) {
     if (currentLayer === layerId) return;
     
-    // Сохраняем состояние текущего слоя (только отмеченные метки)
     saveCurrentLayerState();
-    
-    // Сохраняем состояние карты текущего слоя
+
     saveMapState();
-    
-    // Скрываем метки текущего слоя
+
     hideCurrentLayerMarkers();
-    
-    // Меняем текущий слой
+
     map.setZoom(0);
     const oldLayer = currentLayer;
     currentLayer = layerId;
     
-    // Очищаем markersByFilter
     clearMarkersByFilter();
-    
-    // Обновляем изображение карты (с новыми параметрами и зумом)
+
     updateMapImage();
-    
-    // Загружаем состояние нового слоя (только отмеченные метки)
+
     loadLayerState(layerId);
-    
-    // Теперь заполняем markersByFilter для нового слоя
+
     populateMarkersByFilter();
-    
-    // Обновляем видимость всех маркеров нового слоя
+
     updateAllMarkersVisibility();
-    
-    // Сохраняем выбор слоя
+
     saveCurrentLayer();
     
     console.log(`Переключен слой с ${oldLayer} на ${layerId}`);
@@ -376,29 +319,23 @@ function switchLayer(layerId) {
  * Обновление изображения карты при переключении слоя
  */
 function updateMapImage() {
-    // Получаем конфиг нового слоя
     const layerConfig = layersConfig.find(l => l.id === currentLayer);
     if (!layerConfig) return;
     
-    // Удаляем текущий ImageOverlay
     if (layerImageOverlays[currentLayer]) {
         map.removeLayer(layerImageOverlays[currentLayer]);
     }
     
-    // Добавляем новый ImageOverlay
     const newLayer = layerImageOverlays[currentLayer];
     if (newLayer) {
         newLayer.addTo(map);
         
-        // Устанавливаем новые параметры карты
         map.setMaxBounds(layerConfig.bounds);
         map.setMaxZoom(layerConfig.maxZoom);
         map.setMinZoom(layerConfig.minZoom);
         
-        // Устанавливаем зум по умолчанию
         map.setZoom(layerConfig.defaultZoom);
-        
-        // Центрируем карту
+
         map.fitBounds(layerConfig.bounds);
     }
 }
@@ -414,21 +351,16 @@ const MapSwitchControl = L.Control.extend({
     onAdd: function(map) {
         const switchButton = L.DomUtil.create('div', 'map-switch-button');
         
-        // Создаем текстовый элемент
         const switchText = L.DomUtil.create('div', 'map-switch-text', switchButton);
         switchText.textContent = 'Сменить карту';
         
-        // Обработчик клика
         switchButton.onclick = function(e) {
-            // Находим следующий слой
             const currentIndex = layersConfig.findIndex(l => l.id === currentLayer);
             const nextIndex = (currentIndex + 1) % layersConfig.length;
             const nextLayer = layersConfig[nextIndex];
             
-            // Переключаемся на следующий слой
             switchLayer(nextLayer.id);
             
-            // Можно показать всплывающее сообщение на кнопке
             switchText.textContent = 'Карта изменена';
             setTimeout(() => {
                 switchText.textContent = 'Сменить карту';
@@ -446,10 +378,8 @@ const MapSwitchControl = L.Control.extend({
  */
 function saveCurrentLayerState() {
     
-    // Сохраняем состояние отмеченных меток текущего слоя
     markedMarkersByLayer[currentLayer] = { ...markedMarkers };
     
-    // Сохраняем состояние инструментов
     saveToolsStates();
 }
 
@@ -457,21 +387,14 @@ function saveCurrentLayerState() {
  * Загрузка состояния слоя
  */
 function loadLayerState(layerId) {    
-    // Загружаем состояние отмеченных маркеров
     const layerMarkedMarkers = markedMarkersByLayer[layerId];
     if (layerMarkedMarkers) {
-        // Очищаем текущие отмеченные маркеры
         markedMarkers = {};
-        // Копируем отмеченные маркеры из слоя
         Object.assign(markedMarkers, layerMarkedMarkers);
     } else {
         markedMarkers = {};
     }
-    
-    // Обновляем видимость маркеров нового слоя
     updateAllMarkersVisibility();
-    
-    // Обновляем состояния UI
     updateAllUIStates();
 }
 
@@ -508,7 +431,7 @@ function initSpecialSubmarksStatesForLayer() {
     specialMarksConfig.forEach(mark => {
         if (mark.hasSubmarks && mark.submarks) {
             mark.submarks.forEach(submark => {
-                const fullName = `${mark.name} - ${submark}`;
+        const fullName = `${mark.name} - ${submark}`;
                 if (specialSubmarksStates[fullName] === undefined) {
                     specialSubmarksStates[fullName] = false;
                 }
@@ -521,12 +444,10 @@ function initSpecialSubmarksStatesForLayer() {
  * Обновление всех состояний UI
  */
 function updateAllUIStates() {
-    // Обновляем фильтры
     Object.keys(filterElements).forEach(filterName => {
         updateFilterCheckboxState(filterName);
     });
     
-    // Обновляем подфильтры
     Object.keys(subfilterElements).forEach(subfilterName => {
         const element = subfilterElements[subfilterName];
         if (element) {
@@ -540,12 +461,10 @@ function updateAllUIStates() {
         }
     });
     
-    // Обновляем особые метки
     specialMarksConfig.forEach(mark => {
         updateSpecialMarkCheckboxState(mark.name);
     });
     
-    // Обновляем чекбокс "Все фильтры"
     updateAllFiltersCheckbox();
 }
 
@@ -553,7 +472,6 @@ function updateAllUIStates() {
  * Скрытие маркеров текущего слоя
  */
 function hideCurrentLayerMarkers() {
-    // Скрываем обычные маркеры
     if (markersByLayer[currentLayer]) {
         markersByLayer[currentLayer].forEach(marker => {
             if (map.hasLayer(marker)) {
@@ -562,7 +480,6 @@ function hideCurrentLayerMarkers() {
         });
     }
     
-    // Скрываем пользовательские метки
     if (userMarkersByLayer[currentLayer]) {
         userMarkersByLayer[currentLayer].forEach(marker => {
             if (map.hasLayer(marker)) {
@@ -571,7 +488,6 @@ function hideCurrentLayerMarkers() {
         });
     }
     
-    // Закрываем все тултипы
     closeAllTooltips();
 }
 
@@ -597,7 +513,6 @@ function loadCurrentLayer() {
 // ============================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ С МАРКЕРАМИ
 // ============================================
-
 /**
  * Получить все маркеры текущего слоя (обычные + пользовательские)
  */
@@ -620,13 +535,11 @@ function getAllMarkersForLayer(layerId) {
  * Найти маркер по ID во всех слоях
  */
 function findMarkerById(markerId) {
-    // Ищем во всех слоях
     for (const layerId in markersByLayer) {
         const marker = markersByLayer[layerId]?.find(m => m.customId === markerId);
         if (marker) return { marker, layer: layerId, isUserMarker: false };
     }
     
-    // Ищем в пользовательских метках
     for (const layerId in userMarkersByLayer) {
         const marker = userMarkersByLayer[layerId]?.find(m => m.customId === markerId);
         if (marker) return { marker, layer: layerId, isUserMarker: true };
@@ -638,7 +551,6 @@ function findMarkerById(markerId) {
 // ============================================
 // РАБОТА С СОСТОЯНИЯМИ (LOCALSTORAGE)
 // ============================================
-
 /**
  * Сохранение состояния карты
  */
@@ -646,7 +558,6 @@ function saveMapState() {
     try {
         const center = map.getCenter();
         const zoom = map.getZoom();
-        
         const mapState = {
             lat: center.lat,
             lng: center.lng,
@@ -655,7 +566,6 @@ function saveMapState() {
             layer: currentLayer
         };
         
-        // Сохраняем отдельно для каждого слоя
         localStorage.setItem(`mapViewState_${currentLayer}`, JSON.stringify(mapState));
     } catch (error) {
         console.error('Ошибка сохранения состояния карты:', error);
@@ -671,7 +581,6 @@ function loadMapState() {
         if (saved) {
             const mapState = JSON.parse(saved);
             
-            // Проверяем, что состояние для правильного слоя
             if (mapState.layer !== currentLayer) {
                 return false;
             }
@@ -723,7 +632,6 @@ function loadFilterStates() {
         }
     }
     
-    // Если сохраненных состояний нет, инициализируем значениями из конфига
     console.log('Состояния фильтров не найдены, инициализируем из конфига');
     filtersConfig.forEach(filter => {
         if (!filter.special && !subfilters[filter.name] && filterStates[filter.name] === undefined) {
@@ -731,7 +639,6 @@ function loadFilterStates() {
         }
     });
     
-    // Инициализируем подфильтры
     Object.keys(subfilters).forEach(parentFilter => {
         subfilters[parentFilter].forEach(subfilter => {
             if (subfilterStates[subfilter] === undefined) {
@@ -813,7 +720,6 @@ function loadToolsStates() {
         }
     }
     
-    // Значения по умолчанию
     coordsEnabled = false;
     hideCompletedEnabled = false;
     
@@ -826,7 +732,6 @@ function loadToolsStates() {
  */
 function saveUserMarkers() {
     try {
-        // Сохраняем метки для каждого слоя
         layersConfig.forEach(layer => {
             const layerMarkers = userMarkersByLayer[layer.id] || [];
             const markersToSave = layerMarkers.map(marker => {
@@ -840,7 +745,7 @@ function saveUserMarkers() {
                     x: data.X,
                     y: data.Y,
                     comment: data.Комментарий || '',
-                    layer: data.Карта || layer.id, // Явно сохраняем слой
+                    layer: data.Карта || layer.id,                     
                     isMarked: markedMarkersByLayer[layer.id]?.[marker.customId] || false
                 };
             });
@@ -863,11 +768,8 @@ function loadUserMarkers() {
                 const markersData = JSON.parse(saved);
                 
                 markersData.forEach(data => {
-                    // ВАЖНО: Проверяем, что данные содержат информацию о слое
-                    // Если нет - используем слой из ключа localStorage
                     const markerLayer = data.layer || data.Карта || layer.id;
                     
-                    // Создаем объект данных маркера
                     const markerData = {
                         Название: data.name,
                         ОсновныеФильтры: data.filters || ['Мои метки'],
@@ -876,20 +778,17 @@ function loadUserMarkers() {
                         X: data.x,
                         Y: data.y,
                         Комментарий: data.comment || '',
-                        Карта: markerLayer // Явно указываем слой
+                        Карта: markerLayer                     
                     };
                     
-                    // Создаем маркер с правильным ID
                     const marker = createUserMarker(markerData, data.id);
                     
-                    // Восстанавливаем состояние "отмечено"
                     if (data.isMarked) {
                         if (!markedMarkersByLayer[markerLayer]) {
                             markedMarkersByLayer[markerLayer] = {};
                         }
                         markedMarkersByLayer[markerLayer][data.id] = true;
                         
-                        // Обновляем внешний вид если на текущем слое
                         if (markerLayer === currentLayer) {
                             setTimeout(() => {
                                 updateMarkerAppearance(marker, true);
@@ -901,8 +800,7 @@ function loadUserMarkers() {
             }
         });
         
-        // ОБНОВЛЯЕМ ВИДИМОСТЬ ПОСЛЕ ЗАГРУЗКИ
-        setTimeout(() => {
+                setTimeout(() => {
             updateAllMarkersVisibility();
         }, 200);
     } catch (error) {
@@ -913,24 +811,17 @@ function loadUserMarkers() {
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЙ
 // ============================================
-
-/**
- * Инициализация всех состояний приложения
- */
 function initAllStates() {
-    // Сначала загружаем сохраненные состояния
     loadFilterStates();
     loadSpecialMarksStates();
     loadToolsStates();
     
-    // Инициализация состояний фильтров (только если не загружены из localStorage)
     filtersConfig.forEach(filter => {
         if (filterStates[filter.name] === undefined && !filter.special && !subfilters[filter.name]) {
             filterStates[filter.name] = true;
         }
     });
     
-    // Инициализация состояний подфильтров
     Object.keys(subfilters).forEach(parentFilter => {
         subfilters[parentFilter].forEach(subfilter => {
             if (subfilterStates[subfilter] === undefined) {
@@ -946,7 +837,7 @@ function initAllStates() {
         
         if (mark.hasSubmarks && mark.submarks) {
             mark.submarks.forEach(submark => {
-                const fullName = `${mark.name} - ${submark}`;
+            const fullName = `${mark.name} - ${submark}`;
                 if (specialSubmarksStates[fullName] === undefined) {
                     specialSubmarksStates[fullName] = false;
                 }
@@ -958,7 +849,6 @@ function initAllStates() {
 // ============================================
 // ЗАГРУЗКА И ОТОБРАЖЕНИЕ МЕТОК
 // ============================================
-
 /**
  * Загрузка меток из JSON файла
  */
@@ -973,7 +863,6 @@ async function loadMarkersFromJSON() {
         
         console.log(`Загрузка JSON: найдено ${markersData.length} записей`);
         
-        // Очищаем предыдущие маркеры
         allMarkers = [];
         markersByFilter = {
         'Алтари': [], 'Бижутерия': [], 'Жуки': [], 'Записки': [], 
@@ -985,7 +874,6 @@ async function loadMarkersFromJSON() {
         'Характеристики': [], 'Хряк контрабандистов': [], 'Мои метки': []
         };
         
-        // Создаем маркеры
         markersData.forEach((data, index) => {
             if (data.Название && !isNaN(data.X) && !isNaN(data.Y)) {
                 createMarkerFromJSON(data);
@@ -994,7 +882,6 @@ async function loadMarkersFromJSON() {
         
         console.log(`Создано ${allMarkers.length} маркеров из JSON`);
         
-        // Инициализируем видимость
         initializeMarkersVisibility();
         
     } catch (error) {
@@ -1010,20 +897,16 @@ async function loadMarkersFromJSON() {
  * Создание маркера на карте
  */
 function createMarkerFromJSON(data) {
-    // Проверяем, для какого слоя эта метка
     const markerLayer = data.Карта || 'worldmap';
     
-    // Если метка не для текущего слоя, пропускаем создание на карте
     const addToMap = markerLayer === currentLayer;
     
     let iconToUse = markerIcons['default'];
     
-    // Используем поле "Иконка" для определения иконки
     if (data.Иконка) {
         if (markerIcons[data.Иконка]) {
             iconToUse = markerIcons[data.Иконка];
         } else {
-            // Пробуем найти среди подфильтров
             for (const [parentFilter, subfilterList] of Object.entries(subfilters)) {
                 if (subfilterList.includes(data.Иконка) && markerIcons[parentFilter]) {
                     iconToUse = markerIcons[parentFilter];
@@ -1039,12 +922,9 @@ function createMarkerFromJSON(data) {
         bubblingMouseEvents: false
     });
     
-    // Используем ID из JSON или генерируем новый
-    const markerId = data.ID || generateMarkerId(data);
+        const markerId = data.ID || generateMarkerId(data);
     marker.customId = markerId;
-    marker.layer = markerLayer; // Сохраняем информацию о слое
-    
-    // Popup для наведения
+    marker.layer = markerLayer;     
     const popupContent = `
         <div style="padding: 0 4px; font-size: 14px; font-weight: bold; white-space: nowrap; color: white;">
             ${data.Название}
@@ -1061,7 +941,6 @@ function createMarkerFromJSON(data) {
     
     marker.bindPopup(popup);
     
-    // Подготавливаем данные в нужном формате
     const markerData = {
         Название: data.Название,
         ОсновныеФильтры: data.ОсновныеФильтры || [],
@@ -1070,26 +949,22 @@ function createMarkerFromJSON(data) {
         X: data.X,
         Y: data.Y,
         Комментарий: data.Комментарий || '',
-        Карта: markerLayer // Сохраняем слой
+        Карта: markerLayer     
     };
     
-    // Настраиваем обработчики событий
     let tooltip = null;
     setupMarkerEventHandlers(marker, markerData, tooltip);
     
-    // Сохраняем данные в маркере
     marker.markerData = markerData;
     marker.mainFilters = data.ОсновныеФильтры || [];
     marker.subfilters = data.Подфильтры || [];
     marker.isUserMarker = false;
     
-    // Добавляем в массив слоя
     if (!markersByLayer[markerLayer]) {
         markersByLayer[markerLayer] = [];
     }
     markersByLayer[markerLayer].push(marker);
     
-    // Распределяем по фильтрам (для текущего слоя)
     if (markerLayer === currentLayer && data.ОсновныеФильтры) {
         data.ОсновныеФильтры.forEach(filter => {
             if (!markersByFilter[filter]) {
@@ -1108,7 +983,6 @@ function createMarkerFromJSON(data) {
         });
     }
     
-    // Добавляем на карту если видим и для текущего слоя
     if (addToMap && shouldMarkerBeVisible(marker)) {
         marker.addTo(map);
     }
@@ -1122,12 +996,10 @@ function createMarkerFromJSON(data) {
 function buildAllFilters(data) {
     const allFilters = [];
     
-    // Добавляем основной фильтр для иконки первым
     if (data.Иконка && !allFilters.includes(data.Иконка)) {
         allFilters.push(data.Иконка);
     }
     
-    // Добавляем основные фильтры
     if (data.ОсновныеФильтры) {
         data.ОсновныеФильтры.forEach(filter => {
             if (!allFilters.includes(filter)) {
@@ -1136,7 +1008,6 @@ function buildAllFilters(data) {
         });
     }
     
-    // Добавляем подфильтры
     if (data.Подфильтры) {
         data.Подфильтры.forEach(subfilter => {
             if (!allFilters.includes(subfilter)) {
@@ -1154,22 +1025,18 @@ function buildAllFilters(data) {
 function loadMarkedMarkers() {
     
     try {
-        // Инициализируем структуры для всех слоев
         layersConfig.forEach(layer => {
             if (!markedMarkersByLayer[layer.id]) {
                 markedMarkersByLayer[layer.id] = {};
             }
         });
         
-        // Загружаем для каждого слоя
         layersConfig.forEach(layer => {
             const saved = localStorage.getItem(`markedMarkers_${layer.id}`);
             
             if (saved) {
                 try {
                     const layerMarkedMarkers = JSON.parse(saved);
-                    
-                    // Фильтруем некорректные записи
                     const validMarkedMarkers = {};
                     Object.entries(layerMarkedMarkers).forEach(([markerId, isMarked]) => {
                         if (typeof isMarked === 'boolean') {
@@ -1179,12 +1046,10 @@ function loadMarkedMarkers() {
                     
                     markedMarkersByLayer[layer.id] = validMarkedMarkers;
                                         
-                    // Если это текущий слой, применяем состояние
                     if (layer.id === currentLayer) {
                         markedMarkers = { ...validMarkedMarkers };
                         
-                        // Применяем состояние к существующим маркерам текущего слоя
-                        const allCurrentMarkers = getAllMarkersForCurrentLayer();
+                    const allCurrentMarkers = getAllMarkersForCurrentLayer();
                         allCurrentMarkers.forEach(marker => {
                             const markerId = marker.customId;
                             if (markedMarkers[markerId]) {
@@ -1202,7 +1067,6 @@ function loadMarkedMarkers() {
         });
     } catch (error) {
         console.error('Общая ошибка загрузки отмеченных маркеров:', error);
-        // Инициализируем для всех слоев
         layersConfig.forEach(layer => {
             markedMarkersByLayer[layer.id] = {};
         });
@@ -1216,7 +1080,6 @@ function loadMarkedMarkers() {
 function clearAllMarkedMarkers() {
     console.log('Снимаем все отметки с маркеров на всех слоях...');
     
-    // Подсчитываем общее количество отмеченных меток на всех слоях
     let totalMarkedCount = 0;
     layersConfig.forEach(layer => {
         const layerMarked = markedMarkersByLayer[layer.id] || {};
@@ -1232,7 +1095,6 @@ function clearAllMarkedMarkers() {
         return;
     }
     
-    // 1. Снимаем отметки на текущем слое
     const allCurrentMarkers = getAllMarkersForCurrentLayer();
     allCurrentMarkers.forEach(marker => {
         const markerId = marker.customId;
@@ -1243,7 +1105,7 @@ function clearAllMarkedMarkers() {
             if (marker.isTooltipActive) {
                 marker.closeTooltip();
                 marker.isTooltipActive = false;
-                const element = marker.getElement();
+        const element = marker.getElement();
                 if (element) {
                     element.classList.remove('tooltip-active');
                 }
@@ -1251,19 +1113,15 @@ function clearAllMarkedMarkers() {
         }
     });
     
-    // 2. Снимаем отметки на всех слоях в структурах данных
     layersConfig.forEach(layer => {
         const layerId = layer.id;
         
-        // Очищаем отмеченные метки в структуре данных
         markedMarkersByLayer[layerId] = {};
         
-        // Обновляем видимость меток, если это текущий слой
         if (layerId === currentLayer) {
             markedMarkers = {};
         }
         
-        // Для каждого маркера этого слоя обновляем внешний вид
         const allLayerMarkers = getAllMarkersForLayer(layerId);
         allLayerMarkers.forEach(marker => {
             if (marker.isTooltipActive) {
@@ -1273,16 +1131,12 @@ function clearAllMarkedMarkers() {
         });
     });
     
-    // 3. Сохраняем изменения
     saveMarkedMarkers();
-    saveUserMarkers(); // Также сохраняем пользовательские метки
-    
-    // 4. Обновляем видимость маркеров на текущем слое
+    saveUserMarkers();     
     updateAllMarkersVisibility();
     closeAllTooltips();
     
-    // 5. Показываем сообщение об успехе
-    alert(`Все отметки сняты!`);
+        alert(`Все отметки сняты!`);
     console.log(`Сняты все отметки на всех слоях. Всего: ${totalMarkedCount} меток`);
 }
 
@@ -1291,14 +1145,12 @@ function clearAllMarkedMarkers() {
  */
 function saveMarkedMarkers() {
     try {
-        // Убедимся, что у всех слоев есть структуры данных
         layersConfig.forEach(layer => {
             if (!markedMarkersByLayer[layer.id]) {
                 markedMarkersByLayer[layer.id] = {};
             }
         });
         
-        // Сохраняем для каждого слоя
         layersConfig.forEach(layer => {
             const layerMarkedMarkers = markedMarkersByLayer[layer.id] || {};
             localStorage.setItem(`markedMarkers_${layer.id}`, JSON.stringify(layerMarkedMarkers));
@@ -1314,13 +1166,11 @@ function saveMarkedMarkers() {
 function updateMarkerAppearance(marker, isMarked) {
     const iconElement = marker.getElement();
     if (!iconElement) {
-        // Если элемента нет, маркер не на карте - ничего не делаем
         return;
     }
     
     if (isMarked) {
         iconElement.classList.add('marked');
-        // Скрываем только если включен режим скрытия отмеченных
         if (hideCompletedEnabled) {
             iconElement.style.display = 'none';
         } else {
@@ -1358,33 +1208,28 @@ function updateTooltipCheckbox(markerId) {
  * Настройка обработчиков событий для маркера
  */
 function setupMarkerEventHandlers(marker, data, tooltip) {
-    // Наведение - открываем popup
     marker.on('mouseover', function() {
         if (!this.isTooltipActive) {
             this.openPopup();
         }
     });
     
-    // Уход курсора - закрываем popup
     marker.on('mouseout', function() {
         if (!this.isTooltipActive) {
             this.closePopup();
         }
     });
     
-    // Клик - создаем/открываем tooltip
     marker.on('click', function(e) {
         if (e.originalEvent) {
             e.originalEvent.stopPropagation();
             e.originalEvent.stopImmediatePropagation();
         }
         
-        // В режиме создания меток - ничего не делаем
         if (createMarkersMode) {
             return false;
         }
 
-        // Если этот маркер уже активен - закрываем его
         if (this.isTooltipActive) {
             this.closeTooltip();
             this.isTooltipActive = false;
@@ -1395,15 +1240,12 @@ function setupMarkerEventHandlers(marker, data, tooltip) {
             return false;
         }
         
-        // Закрываем все другие тултипы
         closeAllTooltips();
         
-        // Получаем актуальное состояние маркера
         const markerId = this.customId;
         const isMarked = markedMarkers[markerId] || false;
         const commentText = data.Комментарий ? `<p>${data.Комментарий}</p>` : '';
         
-        // Создаем HTML для тултипа с актуальным состоянием чекбокса
         const tooltipContent = `
             <div class="marker-tooltip-container">
                 <div class="marker-tooltip-header">
@@ -1432,11 +1274,9 @@ function setupMarkerEventHandlers(marker, data, tooltip) {
             </div>
         `;
         
-        // Если тултип уже существует, обновляем его содержимое
         if (tooltip) {
             tooltip.setContent(tooltipContent);
         } else {
-            // Создаем новый тултип
             tooltip = L.tooltip({
                 permanent: true,
                 direction: 'auto',
@@ -1448,11 +1288,9 @@ function setupMarkerEventHandlers(marker, data, tooltip) {
             marker.bindTooltip(tooltip);
         }
         
-        // Открываем tooltip
         this.openTooltip();
         this.closePopup();
         
-        // Добавляем обработчики событий для чекбокса
         setTimeout(() => {
             setupCheckboxListeners(markerId);
         }, 10);
@@ -1460,7 +1298,6 @@ function setupMarkerEventHandlers(marker, data, tooltip) {
         return false;
     });
     
-    // Обработчики событий tooltip
     marker.on('tooltipopen', function() {
         this.isTooltipActive = true;
         const element = this.getElement();
@@ -1477,7 +1314,6 @@ function setupMarkerEventHandlers(marker, data, tooltip) {
         }
     });
     
-    // Инициализируем состояние
     marker.isTooltipActive = false;
 }
 
@@ -1493,7 +1329,6 @@ function setupCheckboxListeners(markerId) {
     
     if (!checkbox || !label) return;
     
-    // Обработчик для чекбокса
     checkbox.addEventListener('click', function(e) {
         e.stopPropagation();
         e.preventDefault();
@@ -1501,7 +1336,6 @@ function setupCheckboxListeners(markerId) {
         toggleMarkerMarked(markerId, this);
     }, true);
     
-    // Обработчик для метки
     label.addEventListener('click', function(e) {
         e.stopPropagation();
         e.preventDefault();
@@ -1517,13 +1351,11 @@ function setupCheckboxListeners(markerId) {
  * Обновить видимость маркера при изменении его состояния "отмечено"
  */
 function updateMarkerVisibilityOnMarkedChange(markerId) {
-    // Находим маркер во всех слоях
     const markerInfo = findMarkerById(markerId);
     if (!markerInfo) return;
     
     const { marker, layer } = markerInfo;
     
-    // Проверяем, принадлежит ли маркер текущему слою
     if (layer !== currentLayer) return;
     
     const shouldBeVisible = shouldMarkerBeVisible(marker);
@@ -1531,7 +1363,6 @@ function updateMarkerVisibilityOnMarkedChange(markerId) {
     
     if (shouldBeVisible && !isOnMap) {
         marker.addTo(map);
-        // Обновляем внешний вид
         const isMarked = markedMarkers[markerId] || false;
         updateMarkerAppearance(marker, isMarked);
     } else if (!shouldBeVisible && isOnMap) {
@@ -1544,7 +1375,6 @@ function updateMarkerVisibilityOnMarkedChange(markerId) {
  */
 function toggleMarkerMarked(markerId, checkboxElement) {
     
-    // Находим маркер во всех слоях
     const markerInfo = findMarkerById(markerId);
     if (!markerInfo) {
         console.error(`Маркер с ID ${markerId} не найден`);
@@ -1553,7 +1383,6 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     
     const { marker, layer } = markerInfo;
     
-    // Проверяем, принадлежит ли маркер текущему слою
     if (layer !== currentLayer) {
         console.warn(`Маркер ${markerId} принадлежит слою ${layer}, а текущий слой ${currentLayer}`);
         return;
@@ -1562,19 +1391,15 @@ function toggleMarkerMarked(markerId, checkboxElement) {
     const isCurrentlyMarked = markedMarkers[markerId] || false;
     const newState = !isCurrentlyMarked;
     
-    // Обновляем состояние в текущем слое
     markedMarkers[markerId] = newState;
     
-    // Обновляем состояние в структуре слоя
     if (!markedMarkersByLayer[layer]) {
         markedMarkersByLayer[layer] = {};
     }
     markedMarkersByLayer[layer][markerId] = newState;
     
-    // Обновляем внешний вид маркера
     updateMarkerAppearance(marker, newState);
     
-    // Обновляем чекбокс в тултипе
     if (checkboxElement) {
         if (newState) {
             checkboxElement.classList.add('checked');
@@ -1585,19 +1410,16 @@ function toggleMarkerMarked(markerId, checkboxElement) {
         }
     }
     
-    // Проверяем, нужно ли изменить видимость маркера
     const shouldBeVisible = shouldMarkerBeVisible(marker);
     const isOnMap = map.hasLayer(marker);
     
     if (shouldBeVisible && !isOnMap) {
         marker.addTo(map);
-        // После добавления на карту обновляем внешний вид
         updateMarkerAppearance(marker, newState);
     } else if (!shouldBeVisible && isOnMap) {
         map.removeLayer(marker);
     }
     
-    // Сохраняем состояние
     saveMarkedMarkers();
 }
 
@@ -1641,7 +1463,7 @@ function createTestMarkers() {
             Карта: "worldmap"
         },
         {
-            ID: "300_300_Тестовая_метка",
+            ID: "400_400_Тестовая_метка",
             Название: "Тестовая метка",
             Иконка: "Неизвестно",
             Подфильтры: ["Неизвестно"],
@@ -1663,14 +1485,12 @@ function createTestMarkers() {
  */
 function initLayerDataStructures() {
     layersConfig.forEach(layer => {
-        // Инициализируем массивы маркеров
         if (!markersByLayer[layer.id]) {
             markersByLayer[layer.id] = [];
         }
         if (!userMarkersByLayer[layer.id]) {
             userMarkersByLayer[layer.id] = [];
         }
-        // Инициализируем состояния ОТМЕЧЕННЫХ МЕТОК по слоям
         if (!markedMarkersByLayer[layer.id]) {
             markedMarkersByLayer[layer.id] = {};
         }
@@ -1680,7 +1500,6 @@ function initLayerDataStructures() {
 // ============================================
 // УПРАВЛЕНИЕ ВИДИМОСТЬЮ МЕТОК
 // ============================================
-
 /**
  * Инициализация видимости меток при загрузке
  */
@@ -1701,7 +1520,6 @@ function initializeMarkersVisibility() {
 function updateAllMarkersVisibility() {
     closeAllTooltips();
     
-    // Получаем все маркеры текущего слоя
     const allCurrentMarkers = getAllMarkersForCurrentLayer();
     
     allCurrentMarkers.forEach(marker => {
@@ -1712,7 +1530,6 @@ function updateAllMarkersVisibility() {
             if (!isOnMap) {
                 marker.addTo(map);
             }
-            // После добавления на карту обновляем внешний вид
             const markerId = marker.customId;
             if (markedMarkers[markerId]) {
                 updateMarkerAppearance(marker, true);
@@ -1729,7 +1546,6 @@ function updateAllMarkersVisibility() {
  * Проверка, должен ли маркер быть видимым
  */
 function shouldMarkerBeVisible(marker) {
-    // Проверяем, принадлежит ли маркер текущему слою
     if (marker.layer !== currentLayer) {
         return false;
     }
@@ -1737,17 +1553,13 @@ function shouldMarkerBeVisible(marker) {
     const markerId = marker.customId;
     const isMarked = markedMarkers[markerId] || false;
     
-    // Если включен режим "Скрыть отмеченные" и маркер отмечен
     if (hideCompletedEnabled && isMarked) {
         return false;
     }
     
-    // Проверяем пользовательские метки
     if (marker.isUserMarker) {
-        // Проверяем фильтр "Мои метки"
         const myMarksEnabled = filterStates['Мои метки'] === true;
         if (!myMarksEnabled) {
-            // Закрываем тултип если он открыт
             if (marker.isTooltipActive) {
                 marker.closeTooltip();
                 marker.isTooltipActive = false;
@@ -1761,7 +1573,6 @@ function shouldMarkerBeVisible(marker) {
         return true;
     }
     
-    // Если у маркера открыт тултип, закрываем его при скрытии маркера
     if (marker.isTooltipActive) {
         marker.closeTooltip();
         marker.isTooltipActive = false;
@@ -1771,18 +1582,16 @@ function shouldMarkerBeVisible(marker) {
         }
     }
     
-    // Если у маркера нет фильтров, всегда показываем
     if ((!marker.mainFilters || marker.mainFilters.length === 0) && 
         (!marker.subfilters || marker.subfilters.length === 0)) {
         return true;
     }
     
-    // Проверяем основные фильтры маркера
     if (marker.mainFilters && marker.mainFilters.length > 0) {
         for (const mainFilter of marker.mainFilters) {
             if (filterStates[mainFilter] === true) {
                 if (subfilters[mainFilter] && subfilters[mainFilter].length > 0) {
-                    const hasVisibleSubfilter = marker.subfilters && 
+            const hasVisibleSubfilter = marker.subfilters && 
                         marker.subfilters.some(subfilter => 
                             subfilters[mainFilter].includes(subfilter) && 
                             subfilterStates[subfilter] === true
@@ -1798,7 +1607,6 @@ function shouldMarkerBeVisible(marker) {
         }
     }
     
-    // Проверяем отдельные подфильтры
     if (marker.subfilters && marker.subfilters.length > 0) {
         for (const subfilter of marker.subfilters) {
             if (subfilterStates[subfilter] === true) {
@@ -1825,7 +1633,6 @@ function clearMarkersByFilter() {
 function populateMarkersByFilter() {
     clearMarkersByFilter();
     
-    // Добавляем обычные маркеры текущего слоя
     const regularMarkers = markersByLayer[currentLayer] || [];
     regularMarkers.forEach(marker => {
         if (marker.mainFilters) {
@@ -1847,7 +1654,6 @@ function populateMarkersByFilter() {
         }
     });
     
-    // Добавляем пользовательские метки текущего слоя
     const userMarkers = userMarkersByLayer[currentLayer] || [];
     userMarkers.forEach(marker => {
         if (marker.mainFilters) {
@@ -1874,7 +1680,6 @@ function populateMarkersByFilter() {
  * Закрытие всех активных тултипов
  */
 function closeAllTooltips() {
-    // Получаем все маркеры текущего слоя
     const allCurrentMarkers = getAllMarkersForCurrentLayer();
     
     allCurrentMarkers.forEach(marker => {
@@ -1893,12 +1698,10 @@ function closeAllTooltips() {
  * Создание пользовательской метки
  */
 function createUserMarker(data, customId = null) {
-    // Определяем слой - берем из данных или используем текущий
     const markerLayer = data.Карта || currentLayer;
     
     const markerId = customId || `user_marker_${Date.now()}_${userMarkerCounter++}`;
     
-    // Используем иконку для "Мои метки"
     const iconToUse = markerIcons['Мои метки'] || markerIcons['default'];
     
     const marker = L.marker([data.Y, data.X], {
@@ -1909,10 +1712,9 @@ function createUserMarker(data, customId = null) {
     });
     
     marker.customId = markerId;
-    marker.layer = markerLayer; // Сохраняем слой
+    marker.layer = markerLayer;     
     marker.isUserMarker = true;
     
-    // Popup для наведения
     const popupContent = `
         <div style="padding: 0 4px; font-size: 14px; font-weight: bold; white-space: nowrap; color: white;">
             ${data.Название}
@@ -1929,27 +1731,22 @@ function createUserMarker(data, customId = null) {
     
     marker.bindPopup(popup);
     
-    // Сохраняем данные с указанием слоя
     marker.markerData = {
         ...data,
-        Карта: markerLayer // Явно указываем слой
+        Карта: markerLayer     
     };
     marker.mainFilters = data.ОсновныеФильтры || ['Мои метки'];
     marker.subfilters = data.Подфильтры || [];
     
-    // Добавляем обработчики событий
     setupUserMarkerEventHandlers(marker, marker.markerData);
     
-    // Инициализируем состояние
     marker.isTooltipActive = false;
     
-    // Добавляем в массив слоя
     if (!userMarkersByLayer[markerLayer]) {
         userMarkersByLayer[markerLayer] = [];
     }
     userMarkersByLayer[markerLayer].push(marker);
     
-    // Добавляем в фильтры только если это текущий слой
     if (markerLayer === currentLayer) {
         data.ОсновныеФильтры.forEach(filter => {
             if (!markersByFilter[filter]) {
@@ -1958,7 +1755,6 @@ function createUserMarker(data, customId = null) {
             markersByFilter[filter].push(marker);
         });
         
-        // Также добавляем подфильтры
         data.Подфильтры.forEach(subfilter => {
             if (!markersByFilter[subfilter]) {
                 markersByFilter[subfilter] = [];
@@ -1966,7 +1762,6 @@ function createUserMarker(data, customId = null) {
             markersByFilter[subfilter].push(marker);
         });
         
-        // Добавляем на карту если видима
         if (shouldMarkerBeVisible(marker)) {
             marker.addTo(map);
         }
@@ -1979,28 +1774,24 @@ function createUserMarker(data, customId = null) {
  * Настройка обработчиков для пользовательских меток
  */
 function setupUserMarkerEventHandlers(marker, data) {
-    // Наведение - открываем popup
     marker.on('mouseover', function() {
         if (!this.isTooltipActive) {
             this.openPopup();
         }
     });
     
-    // Уход курсора - закрываем popup
     marker.on('mouseout', function() {
         if (!this.isTooltipActive) {
             this.closePopup();
         }
     });
     
-    // Клик - в режиме создания удаляем метку, в обычном режиме показываем тултип
     marker.on('click', function(e) {
         if (e.originalEvent) {
             e.originalEvent.stopPropagation();
             e.originalEvent.stopImmediatePropagation();
         }
         
-        // В режиме создания меток - предлагаем удалить
         if (createMarkersMode && this.isUserMarker) {
             if (confirm(`Удалить метку "${data.Название}"?`)) {
                 deleteUserMarker(this.customId);
@@ -2008,28 +1799,23 @@ function setupUserMarkerEventHandlers(marker, data) {
             return false;
         }
         
-        // В обычном режиме - показываем тултип
         if (!createMarkersMode) {
-            // Если этот маркер уже активен - закрываем его
             if (this.isTooltipActive) {
                 this.closeTooltip();
                 this.isTooltipActive = false;
-                const element = this.getElement();
+        const element = this.getElement();
                 if (element) {
                     element.classList.remove('tooltip-active');
                 }
                 return false;
             }
             
-            // Закрываем все другие тултипы
-            closeAllTooltips();
+                        closeAllTooltips();
             
-            // Получаем актуальное состояние маркера
             const markerId = this.customId;
             const isMarked = markedMarkers[markerId] || false;
             const commentText = data.Комментарий ? `<p>${data.Комментарий}</p>` : '';
             
-            // Создаем HTML для тултипа
             const tooltipContent = `
                 <div class="marker-tooltip-container">
                     <div class="marker-tooltip-header">
@@ -2058,7 +1844,6 @@ function setupUserMarkerEventHandlers(marker, data) {
                 </div>
             `;
             
-            // Создаем tooltip
             const tooltip = L.tooltip({
                 permanent: true,
                 direction: 'auto',
@@ -2069,11 +1854,9 @@ function setupUserMarkerEventHandlers(marker, data) {
             
             marker.bindTooltip(tooltip);
             
-            // Открываем tooltip
             this.openTooltip();
             this.closePopup();
             
-            // Добавляем обработчики событий для чекбокса
             setTimeout(() => {
                 setupCheckboxListeners(markerId);
             }, 10);
@@ -2082,7 +1865,6 @@ function setupUserMarkerEventHandlers(marker, data) {
         return false;
     });
     
-    // Обработчики событий tooltip
     marker.on('tooltipopen', function() {
         this.isTooltipActive = true;
         const element = this.getElement();
@@ -2099,7 +1881,6 @@ function setupUserMarkerEventHandlers(marker, data) {
         }
     });
     
-    // Инициализируем состояние
     marker.isTooltipActive = false;
 }
 
@@ -2107,7 +1888,6 @@ function setupUserMarkerEventHandlers(marker, data) {
  * Удаление пользовательской метки
  */
 function deleteUserMarker(markerId) {
-    // Находим метку во всех слоях
     let foundMarker = null;
     let foundLayer = null;
     let markerIndex = -1;
@@ -2127,15 +1907,12 @@ function deleteUserMarker(markerId) {
     
     if (!foundMarker) return;
     
-    // Удаляем с карты если виден
     if (map.hasLayer(foundMarker)) {
         map.removeLayer(foundMarker);
     }
     
-    // Удаляем из массива слоя
     userMarkersByLayer[foundLayer].splice(markerIndex, 1);
     
-    // Удаляем из фильтров (только если это текущий слой)
     if (foundLayer === currentLayer) {
         foundMarker.mainFilters.forEach(filter => {
             if (markersByFilter[filter]) {
@@ -2147,7 +1924,6 @@ function deleteUserMarker(markerId) {
         });
     }
     
-    // Удаляем состояние "отмечено"
     if (markedMarkersByLayer[foundLayer] && markedMarkersByLayer[foundLayer][markerId]) {
         delete markedMarkersByLayer[foundLayer][markerId];
     }
@@ -2155,7 +1931,6 @@ function deleteUserMarker(markerId) {
         delete markedMarkers[markerId];
     }
     
-    // Сохраняем изменения
     saveUserMarkers();
     saveMarkedMarkers();
 }
@@ -2168,27 +1943,21 @@ function cleanupGhostMarkedMarkers() {
     
     let cleanupCount = 0;
     
-    // Проходим по всем слоям
     layersConfig.forEach(layer => {
         const layerMarkedMarkers = markedMarkersByLayer[layer.id];
         if (!layerMarkedMarkers) return;
         
-        // Получаем все маркеры слоя
         const allLayerMarkers = getAllMarkersForLayer(layer.id);
         
-        // Проходим по всем отмеченным маркерам слоя
         Object.keys(layerMarkedMarkers).forEach(markerId => {
-            // Ищем маркер в маркерах слоя
             const markerExists = allLayerMarkers.some(m => m.customId === markerId);
             
-            // Если маркер не найден - удаляем запись
             if (!markerExists) {
                 delete layerMarkedMarkers[markerId];
                 cleanupCount++;
             }
         });
         
-        // Сохраняем обновленный слой
         markedMarkersByLayer[layer.id] = layerMarkedMarkers;
     });
     
@@ -2206,11 +1975,8 @@ function cleanupGhostMarkedMarkers() {
  * Диалог создания новой метки
  */
 function createMarkerDialog(latlng) {
-    // Собираем все доступные фильтры и подфильтры
     const allAvailableFilters = new Set();
-    const filtersTree = {}; // Дерево фильтров: {фильтр: [подфильтры]}
-    
-    // Основные фильтры (кроме "Мои метки")
+    const filtersTree = {};     
     filtersConfig.forEach(filter => {
         if (!filter.special && filter.name !== 'Мои метки') {
             allAvailableFilters.add(filter.name);
@@ -2218,9 +1984,8 @@ function createMarkerDialog(latlng) {
         }
     });
     
-    // Подфильтры
     Object.entries(subfilters).forEach(([parent, subfilterList]) => {
-        if (filtersTree[parent]) { // Если родительский фильтр существует
+        if (filtersTree[parent]) {
             filtersTree[parent] = subfilterList;
             subfilterList.forEach(subfilter => {
                 allAvailableFilters.add(subfilter);
@@ -2228,10 +1993,8 @@ function createMarkerDialog(latlng) {
         }
     });
     
-    // Преобразуем в массив и сортируем
     const sortedFilters = Array.from(allAvailableFilters).sort();
     
-    // Создаем модальное окно
     const modal = document.createElement('div');
     modal.className = 'create-marker-dialog-overlay';
     
@@ -2306,17 +2069,15 @@ function createMarkerDialog(latlng) {
     modal.appendChild(dialog);
     document.body.appendChild(modal);
     
-    // Элементы
     const nameInput = dialog.querySelector('#marker-name');
     const filterSearch = dialog.querySelector('#filter-search');
     const searchResults = dialog.querySelector('#search-results');
     const filterChipsContainer = dialog.querySelector('#filter-chips-container');
     const filtersTreeContainer = dialog.querySelector('#filters-tree');
     
-    // Массив выбранных фильтров
     let selectedFilters = [];
     
-    // Функция для создания элемента дерева фильтров
+    // Функция для создания элемента дерева фильтров    
     function createFilterTreeItem(filterName, isSubfilter = false, parentName = '') {
         const item = document.createElement('div');
         item.className = 'filter-tree-item';
@@ -2329,11 +2090,9 @@ function createMarkerDialog(latlng) {
             item.classList.add('selected');
         }
         
-        // Текст фильтра
         const textSpan = document.createElement('span');
         textSpan.textContent = filterName;
         
-        // Иконка статуса
         const statusIcon = document.createElement('span');
         statusIcon.innerHTML = selectedFilters.includes(filterName) ? '✓' : '+';
         statusIcon.className = 'tree-item-status';
@@ -2344,7 +2103,6 @@ function createMarkerDialog(latlng) {
         item.appendChild(textSpan);
         item.appendChild(statusIcon);
         
-        // Эффекты при наведении
         item.addEventListener('mouseover', () => {
             item.classList.add('hover');
             if (selectedFilters.includes(filterName)) {
@@ -2361,7 +2119,6 @@ function createMarkerDialog(latlng) {
             }
         });
                 
-                // Обработчик клика
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
                     toggleFilter(filterName);
@@ -2374,15 +2131,12 @@ function createMarkerDialog(latlng) {
     function buildFilterTree() {
         filtersTreeContainer.innerHTML = '';
         
-        // Сортируем фильтры по алфавиту
         const sortedMainFilters = Object.keys(filtersTree).sort();
         
         sortedMainFilters.forEach(mainFilter => {
-            // Основной фильтр
             const mainFilterItem = createFilterTreeItem(mainFilter, false);
             filtersTreeContainer.appendChild(mainFilterItem);
             
-            // Подфильтры (если есть)
             const subfilters = filtersTree[mainFilter];
             if (subfilters && subfilters.length > 0) {
                 subfilters.sort().forEach(subfilter => {
@@ -2390,9 +2144,8 @@ function createMarkerDialog(latlng) {
                     filtersTreeContainer.appendChild(subfilterItem);
                 });
                 
-                // Добавляем разделитель между группами фильтров
-                if (sortedMainFilters.indexOf(mainFilter) !== sortedMainFilters.length - 1) {
-                    const separator = document.createElement('div');
+            if (sortedMainFilters.indexOf(mainFilter) !== sortedMainFilters.length - 1) {
+            const separator = document.createElement('div');
                     separator.className = 'filters-tree-separator';
                     filtersTreeContainer.appendChild(separator);
                 }
@@ -2405,17 +2158,14 @@ function createMarkerDialog(latlng) {
         const chip = document.createElement('div');
         chip.className = 'filter-chip';
         
-        // Текст фильтра
         const chipText = document.createElement('span');
         chipText.textContent = filterName;
         chipText.style.marginRight = '6px';
         
-        // Кнопка удаления
         const removeBtn = document.createElement('span');
         removeBtn.innerHTML = '✕';
         removeBtn.className = 'remove-filter-chip';
         
-        // Обработчик удаления
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleFilter(filterName);
@@ -2429,17 +2179,14 @@ function createMarkerDialog(latlng) {
     
     // Функция для обновления отображения чипсов
     function updateFilterChips() {
-        // Очищаем контейнер
         filterChipsContainer.innerHTML = '';
         
-        // Если нет выбранных фильтров, показываем заглушку
         if (selectedFilters.length === 0) {
             const placeholder = document.createElement('div');
             placeholder.className = 'filters-chips-placeholder';
             placeholder.textContent = 'Нет выбранных фильтров';
             filterChipsContainer.appendChild(placeholder);
         } else {
-            // Добавляем чипсы
             selectedFilters.forEach(filter => {
                 const chip = createFilterChip(filter);
                 filterChipsContainer.appendChild(chip);
@@ -2452,14 +2199,11 @@ function createMarkerDialog(latlng) {
         const index = selectedFilters.indexOf(filterName);
         
         if (index !== -1) {
-            // Удаляем фильтр
             selectedFilters.splice(index, 1);
         } else {
-            // Добавляем фильтр
             selectedFilters.push(filterName);
         }
         
-        // Обновляем отображение
         updateFilterChips();
         buildFilterTree();
     }
@@ -2476,13 +2220,11 @@ function createMarkerDialog(latlng) {
         const queryLower = query.toLowerCase();
         const results = [];
         
-        // Ищем в основных фильтрах
         Object.keys(filtersTree).forEach(mainFilter => {
             if (mainFilter.toLowerCase().includes(queryLower) && !selectedFilters.includes(mainFilter)) {
                 results.push({ name: mainFilter, type: 'main' });
             }
             
-            // Ищем в подфильтрах
             const subfilters = filtersTree[mainFilter];
             if (subfilters) {
                 subfilters.forEach(subfilter => {
@@ -2503,7 +2245,6 @@ function createMarkerDialog(latlng) {
             return;
         }
         
-        // Группируем результаты
         const groupedResults = {};
         results.forEach(result => {
             const group = result.type === 'main' ? 'Основные фильтры' : `Подфильтры (${result.parent})`;
@@ -2513,35 +2254,30 @@ function createMarkerDialog(latlng) {
             groupedResults[group].push(result);
         });
         
-        // Создаем элементы результатов
         Object.keys(groupedResults).sort().forEach(group => {
-            // Заголовок группы
             const groupHeader = document.createElement('div');
             groupHeader.className = 'search-group-header';
             groupHeader.textContent = group;
             searchResults.appendChild(groupHeader);
             
-            // Элементы группы
             groupedResults[group].forEach(result => {
                 const item = document.createElement('div');
                 item.className = 'search-result-item';
                 
-                // Текст с подсветкой
                 const textSpan = document.createElement('span');
                 const filterName = result.name;
                 const lowerName = filterName.toLowerCase();
                 const index = lowerName.indexOf(queryLower);
                 
                 if (index !== -1) {
-                    const before = filterName.substring(0, index);
-                    const match = filterName.substring(index, index + query.length);
-                    const after = filterName.substring(index + query.length);
+            const before = filterName.substring(0, index);
+            const match = filterName.substring(index, index + query.length);
+            const after = filterName.substring(index + query.length);
                     textSpan.innerHTML = `${before}<span style="color: #4CAF50; font-weight: bold;">${match}</span>${after}`;
                 } else {
                     textSpan.textContent = filterName;
                 }
                 
-                // Иконка добавления
                 const addIcon = document.createElement('span');
                 addIcon.innerHTML = '+';
                 addIcon.className = 'search-add-icon';
@@ -2549,7 +2285,6 @@ function createMarkerDialog(latlng) {
                 item.appendChild(textSpan);
                 item.appendChild(addIcon);
                 
-                // Обработчик клика
                 item.addEventListener('click', () => {
                     toggleFilter(result.name);
                     filterSearch.value = '';
@@ -2563,7 +2298,6 @@ function createMarkerDialog(latlng) {
         searchResults.style.display = 'block';
     }
     
-    // Обработчик поиска
     let searchTimeout;
     filterSearch.addEventListener('input', function() {
         clearTimeout(searchTimeout);
@@ -2572,14 +2306,12 @@ function createMarkerDialog(latlng) {
         }, 200);
     });
     
-    // Скрываем результаты поиска при клике вне
     document.addEventListener('click', function(e) {
         if (!searchResults.contains(e.target) && e.target !== filterSearch) {
             searchResults.style.display = 'none';
         }
     });
     
-    // Обработчики клавиш для поиска
     filterSearch.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             searchResults.style.display = 'none';
@@ -2594,11 +2326,9 @@ function createMarkerDialog(latlng) {
         }
     });
     
-    // Инициализация
     buildFilterTree();
     updateFilterChips();
     
-    // Обработчики кнопок
     dialog.querySelector('#cancel-marker').onclick = function() {
         document.body.removeChild(modal);
     };
@@ -2613,15 +2343,11 @@ function createMarkerDialog(latlng) {
             return;
         }
         
-        // Формируем массив фильтров
-        let filtersArray = ['Мои метки']; // Всегда добавляем "Мои метки" первым
-        
-        // Добавляем выбранные фильтры
+        let filtersArray = ['Мои метки'];
         if (selectedFilters.length > 0) {
             filtersArray = [...filtersArray, ...selectedFilters];
         }
         
-        // Определяем подфильтры
         const subfiltersArray = selectedFilters.filter(filter => {
             for (const parent in subfilters) {
                 if (subfilters[parent].includes(filter)) {
@@ -2631,11 +2357,8 @@ function createMarkerDialog(latlng) {
             return false;
         });
         
-        // Определяем основные фильтры (включая "Мои метки")
-        const mainFiltersArray = ['Мои метки']; // Всегда добавляем "Мои метки"
-        
+        const mainFiltersArray = ['Мои метки'];         
         selectedFilters.forEach(filter => {
-            // Если это не подфильтр, то это основной фильтр
             let isSubfilter = false;
             for (const parent in subfilters) {
                 if (subfilters[parent].includes(filter)) {
@@ -2649,7 +2372,6 @@ function createMarkerDialog(latlng) {
             }
         });
         
-        // Создаем данные маркера с указанием текущего слоя
         const markerData = {
             Название: name,
             ОсновныеФильтры: mainFiltersArray,
@@ -2658,23 +2380,18 @@ function createMarkerDialog(latlng) {
             X: Math.round(latlng.lng),
             Y: Math.round(latlng.lat),
             Комментарий: comment || '',
-            Карта: currentLayer // Явно указываем текущий слой
+            Карта: currentLayer
         };
         
-        // Создаем маркер
         createUserMarker(markerData);
-        
-        // Сохраняем
+
         saveUserMarkers();
-        
-        // Обновляем видимость
+
         updateAllMarkersVisibility();
-        
-        // Закрываем диалог
+
         document.body.removeChild(modal);
     };
     
-    // Закрытие по ESC
     const closeHandler = function(e) {
         if (e.key === 'Escape') {
             document.body.removeChild(modal);
@@ -2692,13 +2409,10 @@ function updateCreateModeCursor() {
     if (!mapContainer) return;
     
     if (createMarkersMode) {
-        // Устанавливаем курсор-крестик для карты
         mapContainer.style.cursor = 'crosshair';
         
-        // Получаем ВСЕ маркеры текущего слоя (обычные + пользовательские)
         const allCurrentMarkers = getAllMarkersForCurrentLayer();
         
-        // Устанавливаем курсор для всех маркеров текущего слоя
         allCurrentMarkers.forEach(marker => {
             const element = marker.getElement();
             if (element) {
@@ -2706,10 +2420,8 @@ function updateCreateModeCursor() {
             }
         });
     } else {
-        // Возвращаем обычный курсор
         mapContainer.style.cursor = '';
         
-        // Возвращаем обычные курсоры для маркеров текущего слоя
         const allCurrentMarkers = getAllMarkersForCurrentLayer();
         allCurrentMarkers.forEach(marker => {
             const element = marker.getElement();
@@ -2724,7 +2436,6 @@ function updateCreateModeCursor() {
  * Экспорт пользовательских меток в JSON файл
  */
 function exportUserMarkersToJSON() {
-    // Получаем пользовательские метки текущего слоя
     const currentUserMarkers = userMarkersByLayer[currentLayer] || [];
     
     if (currentUserMarkers.length === 0) {
@@ -2732,7 +2443,6 @@ function exportUserMarkersToJSON() {
         return;
     }
     
-    // Создаем модальное окно
     const modal = document.createElement('div');
     modal.className = 'create-marker-dialog-overlay';
     
@@ -2779,14 +2489,11 @@ function exportUserMarkersToJSON() {
     modal.appendChild(dialog);
     document.body.appendChild(modal);
     
-    // Эффекты при наведении для кнопок
     const exportOnlyBtn = dialog.querySelector('#export-only-btn');
     const exportDeleteBtn = dialog.querySelector('#export-delete-btn');
     const cancelBtn = dialog.querySelector('#cancel-export');
     
-    // Функция для экспорта JSON (обновленная для работы с currentUserMarkers)
     const performJSONExport = (shouldDelete = false, formatted = false) => {
-        // Обрабатываем каждую метку текущего слоя
         const markersData = currentUserMarkers.map(marker => {
             const data = marker.markerData;
             const markerId = `${data.X}_${data.Y}_${data.Название.replace(/\s+/g, '_')}`;
@@ -2796,7 +2503,6 @@ function exportUserMarkersToJSON() {
             if (filteredFilters.length > 0) {
                 iconfilter = filteredFilters[0];
             } 
-            // Разделяем на фильтры и подфильтры
             const filters = [];
             const newsubfilters = [];
             
@@ -2818,7 +2524,6 @@ function exportUserMarkersToJSON() {
                 }
             });
             
-            // Создаем объект метки
             return {
                 ID: markerId,
                 Название: data.Название,
@@ -2832,30 +2537,23 @@ function exportUserMarkersToJSON() {
             };
         });
         
-        // Создаем финальный JSON объект
         const exportData = markersData;
         
-        // Конвертируем в JSON строку
         let jsonContent;
         if (formatted) {
-            // Красивое форматирование с отступами
             jsonContent = JSON.stringify(exportData, null, 2);
         } else {
-            // Компактный JSON (меньше размер)
             jsonContent = JSON.stringify(exportData);
         }
         
-        // Создаем Blob и ссылку для скачивания
         const blob = new Blob([jsonContent], { 
             type: 'application/json;charset=utf-8' 
         });
         const url = URL.createObjectURL(blob);
         
-        // Создаем временную ссылку для скачивания
         const link = document.createElement('a');
         link.setAttribute('href', url);
         
-        // Генерируем имя файла с датой и именем слоя
         const date = new Date();
         const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
         const timeStr = date.getHours().toString().padStart(2, '0') + 
@@ -2868,28 +2566,20 @@ function exportUserMarkersToJSON() {
         link.click();
         document.body.removeChild(link);
         
-        // Освобождаем память
         setTimeout(() => URL.revokeObjectURL(url), 100);
-        
-        // Если нужно удалить метки после экспорта
+
         if (shouldDelete) {
-            // Запоминаем количество меток для сообщения
             const markersCount = currentUserMarkers.length;
             
-            // Подтверждение для удаления
             if (confirm(`Вы уверены, что хотите удалить ${markersCount} меток текущего слоя после экспорта? Это действие нельзя отменить.`)) {
-                // Удаляем все пользовательские метки текущего слоя
-                // Создаем копию массива, так как оригинальный будет изменяться
                 const markersToDelete = [...currentUserMarkers];
                 
                 markersToDelete.forEach(marker => {
                     deleteUserMarker(marker.customId);
                 });
                 
-                // Обновляем видимость
                 updateAllMarkersVisibility();
-                
-                // Сохраняем изменения
+
                 saveUserMarkers();
                 
                 console.log(`Экспортировано и удалено ${markersCount} меток слоя ${currentLayer}`);
@@ -2907,15 +2597,12 @@ function exportUserMarkersToJSON() {
         }
     };
     
-    // Обработчики кнопок
     exportOnlyBtn.onclick = function() {
-        // Просто экспорт JSON без удаления (компактный)
         performJSONExport(false, false);
         document.body.removeChild(modal);
     };
     
     exportDeleteBtn.onclick = function() {
-        // Экспорт JSON с удалением (компактный)
         performJSONExport(true, false);
         document.body.removeChild(modal);
     };
@@ -2924,7 +2611,6 @@ function exportUserMarkersToJSON() {
         document.body.removeChild(modal);
     };
     
-    // Закрытие по ESC
     const closeHandler = function(e) {
         if (e.key === 'Escape') {
             document.body.removeChild(modal);
@@ -2945,7 +2631,6 @@ function getCurrentLayerName() {
 // ============================================
 // УПРАВЛЕНИЕ ФИЛЬТРАМИ
 // ============================================
-
 /**
  * Показать метки с определенным фильтром
  */
@@ -3059,7 +2744,6 @@ function disableAllSubfilters(parentFilter) {
 // ============================================
 // ОБНОВЛЕНИЕ СОСТОЯНИЙ ЭЛЕМЕНТОВ
 // ============================================
-
 /**
  * Обновление состояния чекбокса фильтра
  */
@@ -3069,7 +2753,6 @@ function updateFilterCheckboxState(filterName) {
     
     const { checkbox, checkmark } = filterElement;
     
-    // Убираем все предыдущие состояния
     checkbox.classList.remove('active', 'partial');
     checkmark.classList.remove('active');
     
@@ -3083,13 +2766,11 @@ function updateFilterCheckboxState(filterName) {
         return;
     }
     
-    // Считаем включенные подфильтры
     const enabledSubfilters = subfilters[filterName].filter(
         subfilter => subfilterStates[subfilter] === true
     ).length;
     const totalSubfilters = subfilters[filterName].length;
     
-    // Обновляем состояние родительского фильтра
     if (enabledSubfilters === 0) {
         filterStates[filterName] = false;
     } else if (enabledSubfilters === totalSubfilters) {
@@ -3098,9 +2779,7 @@ function updateFilterCheckboxState(filterName) {
         filterStates[filterName] = true;
     }
     
-    // Обновляем визуальное состояние
     if (enabledSubfilters === 0) {
-        // Ничего не делаем - состояние "выключено"
     } else if (enabledSubfilters === totalSubfilters) {
         checkbox.classList.add('active');
         checkmark.classList.add('active');
@@ -3149,7 +2828,6 @@ function updateAllFiltersCheckbox() {
 // ============================================
 // СОЗДАНИЕ ЭЛЕМЕНТОВ ИНТЕРФЕЙСА
 // ============================================
-
 /**
  * Создание элемента для отображения координат
  */
@@ -3214,7 +2892,6 @@ function setupAllFiltersToggle(checkbox, checkmark, filterElements, filtersConfi
         }
     });
     
-    // УСТАНАВЛИВАЕМ ВИЗУАЛЬНОЕ СОСТОЯНИЕ ПРИ ИНИЦИАЛИЗАЦИИ
     if (allEnabled) {
         checkmark.classList.add('active');
         checkbox.classList.add('active');
@@ -3341,7 +3018,6 @@ function createCoordsDisplay() {
 // ============================================
 // КАСТОМНЫЕ КОНТРОЛЫ
 // ============================================
-
 /**
  * Контрол для панели инструментов
  */
@@ -3353,20 +3029,17 @@ const ToolsControl = L.Control.extend({
     onAdd: function(map) {
         const toolsContainer = L.DomUtil.create('div', 'tools-container');
         
-        // Заголовок
         const title = L.DomUtil.create('div', 'tools-title', toolsContainer);
         const titleText = L.DomUtil.create('span', 'tools-title-text', title);
         titleText.textContent = "Инструменты";
         const arrowIcon = L.DomUtil.create('span', 'tools-arrow', title);
         arrowIcon.innerHTML = 'развернуть';
         
-        // Контейнер для содержимого
         const toolsContent = L.DomUtil.create('div', 'tools-content collapsed', toolsContainer);
         const toolsPanel = L.DomUtil.create('div', 'tools-panel', toolsContent);
         
         // === СОЗДАЕМ ИНСТРУМЕНТЫ ===
-        
-        // 1. Переключатель координат
+        // 1. Переключатель координат                
         const coordsGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
         const coordsRow = L.DomUtil.create('div', 'tool-row', coordsGroup);
         const coordsClickableArea = L.DomUtil.create('div', 'tool-clickable-area', coordsRow);
@@ -3375,7 +3048,7 @@ const ToolsControl = L.Control.extend({
         const coordsCheckbox = L.DomUtil.create('div', 'tool-checkbox', coordsRow);
         coordsCheckbox.title = "Показать/скрыть координаты курсора";
         const coordsCheckmark = L.DomUtil.create('div', 'tool-checkmark', coordsCheckbox);
-        
+
         // 2. Переключатель "Скрыть отмеченные"
         const hideCompletedGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);   
         const hideCompletedRow = L.DomUtil.create('div', 'tool-row', hideCompletedGroup);
@@ -3396,14 +3069,12 @@ const ToolsControl = L.Control.extend({
         createCheckbox.title = "Режим создания и удаления пользовательских меток";  
         const createCheckmark = L.DomUtil.create('div', 'tool-checkmark', createCheckbox);
 
-        // Устанавливаем начальное состояние
         if (createMarkersMode) {
             createCheckmark.classList.add('active');
             createCheckbox.classList.add('active');
             document.body.style.cursor = 'crosshair';
         }
 
-        // Обработчик для переключателя
         createCheckbox.onclick = function() {
             createMarkersMode = !createMarkersMode;
             
@@ -3411,21 +3082,14 @@ const ToolsControl = L.Control.extend({
                 createCheckmark.classList.add('active');
                 createCheckbox.classList.add('active');
                 
-                // Включаем режим создания
                 updateCreateModeCursor();
-                
-                // В режиме создания закрываем все тултипы
                 closeAllTooltips();
-                
                 updateAllMarkersVisibility();
             } else {
                 createCheckmark.classList.remove('active');
                 createCheckbox.classList.remove('active');
                 
-                // Выключаем режим создания
                 updateCreateModeCursor();
-                
-                // Возвращаем видимость всех меток
                 updateAllMarkersVisibility();
             }
             
@@ -3435,7 +3099,6 @@ const ToolsControl = L.Control.extend({
 
         // 4. Кнопка "Снять все отметки"
         const clearAllMarksGroup = L.DomUtil.create('div', 'tool-group', toolsPanel);
-        
         const clearAllButton = L.DomUtil.create('div', 'tool-button clear-all', clearAllMarksGroup);
         clearAllButton.textContent = "Снять все отметки";
         clearAllButton.title = "Сбросить все отмеченные метки";
@@ -3457,7 +3120,7 @@ const ToolsControl = L.Control.extend({
         });
         
         // === ЛОГИКА ПЕРЕКЛЮЧАТЕЛЕЙ ===
-        
+                
         const coordsDisplay = document.getElementById('coordsDisplay');
         
         const updateCoordinates = (e) => {
@@ -3515,7 +3178,6 @@ const ToolsControl = L.Control.extend({
                 hideCheckbox.classList.remove('active');
             }
             
-            // Обновляем видимость всех маркеров
             updateAllMarkersVisibility();
             closeAllTooltips();
             
@@ -3523,10 +3185,8 @@ const ToolsControl = L.Control.extend({
             L.DomEvent.stopPropagation(this);
         };
         
-        // Инициализация отслеживания координат
         map.on('mousemove', updateCoordinates);
         
-        // Обработчик клика на заголовок для сворачивания/разворачивания
         title.addEventListener('click', function(e) {
             togglePanel('tools');
             L.DomEvent.stopPropagation(e);
@@ -3536,7 +3196,6 @@ const ToolsControl = L.Control.extend({
     }
 });
 
-// Добавляем метод togglePanel в прототип ToolsControl
 ToolsControl.prototype.togglePanel = function(panelType) {
     const toolsContent = document.querySelector('.tools-content');
     const toolsArrow = document.querySelector('.tools-arrow');
@@ -3580,7 +3239,7 @@ const FiltersToggleControl = L.Control.extend({
             clickableArea.style.cursor = filter.hasSubfilters ? 'pointer' : 'default';
             
             if (filter.icon) {
-                const filterIcon = L.DomUtil.create('img', 'filter-icon', clickableArea);
+        const filterIcon = L.DomUtil.create('img', 'filter-icon', clickableArea);
                 filterIcon.src = filter.icon;
                 filterIcon.alt = filter.name;
                 filterIcon.title = filter.name;
@@ -3594,7 +3253,7 @@ const FiltersToggleControl = L.Control.extend({
             filterLabel.textContent = filter.name;
             
             if (filter.hasSubfilters) {
-                const arrow = L.DomUtil.create('span', 'filter-arrow', clickableArea);
+        const arrow = L.DomUtil.create('span', 'filter-arrow', clickableArea);
                 arrow.innerHTML = '▼';
                 arrow.style.marginLeft = '8px';
                 arrow.style.fontSize = '10px';
@@ -3632,7 +3291,7 @@ const FiltersToggleControl = L.Control.extend({
                 fillSubfiltersContainer(filter.name, subfiltersContainer);
                 
                 clickableArea.onclick = function(e) {
-                    const arrow = this.querySelector('.filter-arrow');
+            const arrow = this.querySelector('.filter-arrow');
                     if (subfiltersContainer.style.display === 'none') {
                         subfiltersContainer.style.display = 'block';
                         if (arrow) arrow.style.transform = 'rotate(180deg)';
@@ -3691,7 +3350,7 @@ const SpecialMarksControl = L.Control.extend({
             markLabel.title = mark.description;
             
             if (mark.hasSubmarks && mark.submarks && mark.submarks.length > 0) {
-                const arrow = L.DomUtil.create('span', 'special-mark-arrow', clickableArea);
+        const arrow = L.DomUtil.create('span', 'special-mark-arrow', clickableArea);
                 arrow.innerHTML = '▼';
                 arrow.style.marginLeft = '8px';
                 arrow.style.fontSize = '10px';
@@ -3707,7 +3366,7 @@ const SpecialMarksControl = L.Control.extend({
             updateSpecialMarkCheckboxState(mark.name);
             
             markCheckbox.onclick = function(e) {
-                const newState = !specialMarksStates[mark.name];
+        const newState = !specialMarksStates[mark.name];
                 specialMarksStates[mark.name] = newState;
                 
                 if (newState && mark.hasSubmarks && mark.submarks) {
@@ -3736,20 +3395,20 @@ const SpecialMarksControl = L.Control.extend({
                 submarksContainer.style.display = 'none';
                 
                 mark.submarks.forEach(submarkName => {
-                    const fullSubmarkName = `${mark.name} - ${submarkName}`;
+            const fullSubmarkName = `${mark.name} - ${submarkName}`;
                     if (specialSubmarksStates[fullSubmarkName] === undefined) {
                         specialSubmarksStates[fullSubmarkName] = false;
                     }
                     
-                    const submarkGroup = L.DomUtil.create('div', 'submark-group', submarksContainer);
-                    const submarkLabelContainer = L.DomUtil.create('div', 'submark-label-container', submarkGroup);
-                    const submarkLabel = L.DomUtil.create('span', 'submark-label', submarkLabelContainer);
+            const submarkGroup = L.DomUtil.create('div', 'submark-group', submarksContainer);
+            const submarkLabelContainer = L.DomUtil.create('div', 'submark-label-container', submarkGroup);
+            const submarkLabel = L.DomUtil.create('span', 'submark-label', submarkLabelContainer);
                     submarkLabel.textContent = submarkName;
                     
-                    const submarkCheckbox = L.DomUtil.create('div', 'submark-checkbox', submarkGroup);
+            const submarkCheckbox = L.DomUtil.create('div', 'submark-checkbox', submarkGroup);
                     submarkCheckbox.title = `Отметить как выполненное`;
                     
-                    const submarkCheckmark = L.DomUtil.create('div', 'submark-checkmark', submarkCheckbox);
+            const submarkCheckmark = L.DomUtil.create('div', 'submark-checkmark', submarkCheckbox);
                     
                     if (specialSubmarksStates[fullSubmarkName]) {
                         submarkCheckbox.classList.add('active');
@@ -3806,7 +3465,6 @@ const SpecialMarksControl = L.Control.extend({
 // ============================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================
-
 /**
  * Управление видимостью панелей
  */
@@ -3824,19 +3482,15 @@ function togglePanel(panelType) {
         const isCollapsed = filtersContent.classList.contains('collapsed');
         
         if (isCollapsed) {
-            // Разворачиваем фильтры
             filtersContent.classList.remove('collapsed');
             filtersArrow.innerHTML = 'свернуть';
             
-            // Сворачиваем особые метки, если они открыты
             if (specialMarksContent && !specialMarksContent.classList.contains('collapsed')) {
                 specialMarksContent.classList.add('collapsed');
                 if (specialMarksArrow) specialMarksArrow.innerHTML = 'развернуть';
             }
             
-            // Панель инструментов остается как есть (не трогаем)
         } else {
-            // Сворачиваем фильтры
             filtersContent.classList.add('collapsed');
             filtersArrow.innerHTML = 'развернуть';
         }
@@ -3846,19 +3500,15 @@ function togglePanel(panelType) {
         const isCollapsed = specialMarksContent.classList.contains('collapsed');
         
         if (isCollapsed) {
-            // Разворачиваем особые метки
             specialMarksContent.classList.remove('collapsed');
             specialMarksArrow.innerHTML = 'свернуть';
             
-            // Сворачиваем фильтры, если они открыты
             if (filtersContent && !filtersContent.classList.contains('collapsed')) {
                 filtersContent.classList.add('collapsed');
                 if (filtersArrow) filtersArrow.innerHTML = 'развернуть';
             }
             
-            // Панель инструментов остается как есть
         } else {
-            // Сворачиваем особые метки
             specialMarksContent.classList.add('collapsed');
             specialMarksArrow.innerHTML = 'развернуть';
         }
@@ -3868,13 +3518,10 @@ function togglePanel(panelType) {
         const isCollapsed = toolsContent.classList.contains('collapsed');
         
         if (isCollapsed) {
-            // Разворачиваем инструменты
             toolsContent.classList.remove('collapsed');
             toolsArrow.innerHTML = 'свернуть';
             
-            // Панель инструментов независима, не сворачиваем другие панели
         } else {
-            // Сворачиваем инструменты
             toolsContent.classList.add('collapsed');
             toolsArrow.innerHTML = 'развернуть';
         }
@@ -3907,7 +3554,6 @@ function updateSpecialMarkCheckboxState(markName) {
     const markConfig = specialMarksConfig.find(mark => mark.name === markName);
     if (!markConfig) return;
     
-    // Если нет подметок - обычная логика
     if (!markConfig.hasSubmarks || !markConfig.submarks || markConfig.submarks.length === 0) {
         if (specialMarksStates[markName]) {
             checkbox.classList.add('active');
@@ -3926,29 +3572,22 @@ function updateSpecialMarkCheckboxState(markName) {
         ).length;
     }
     
-    // ОБНОВЛЯЕМ СОСТОЯНИЕ РОДИТЕЛЬСКОЙ МЕТКИ
     if (enabledSubmarks === 0) {
         specialMarksStates[markName] = false;
     } else if (enabledSubmarks === totalSubmarks) {
         specialMarksStates[markName] = true;
     } else {
-        specialMarksStates[markName] = true; // Частичное состояние
-    }
+        specialMarksStates[markName] = true;     }
     
-    // ОБНОВЛЯЕМ ВИЗУАЛЬНОЕ СОСТОЯНИЕ
     if (enabledSubmarks === 0) {
-        // Состояние "выключено" - ничего не добавляем
     } else if (enabledSubmarks === totalSubmarks) {
         checkbox.classList.add('active');
         checkmark.classList.add('active');
     } else {
-        // Частичное состояние
         checkbox.classList.add('partial');
         checkbox.classList.add('active');
-        checkmark.classList.add('active'); // Добавляем active для checkmark тоже
-    }
+        checkmark.classList.add('active');     }
     
-    // ОБНОВЛЯЕМ ПОДМЕТКИ (ВИЗУАЛЬНО)
     if (markConfig.submarks) {
         markConfig.submarks.forEach(submarkName => {
             const fullName = `${markName} - ${submarkName}`;
@@ -3956,7 +3595,7 @@ function updateSpecialMarkCheckboxState(markName) {
             
             allSubmarkLabels.forEach(label => {
                 if (label.textContent === submarkName) {
-                    const submarkElement = label.closest('.submark-group');
+            const submarkElement = label.closest('.submark-group');
                     if (submarkElement) {
                         const subCheckbox = submarkElement.querySelector('.submark-checkbox');
                         const subCheckmark = submarkElement.querySelector('.submark-checkmark');
@@ -4090,29 +3729,22 @@ function enableSpecialMarksScroll() {
 // ============================================
 // ГЛАВНАЯ ИНИЦИАЛИЗАЦИЯ
 // ============================================
-
 /**
  * Основная функция инициализации приложения
  */
 function initializeApp() {
     console.log('Инициализация приложения...');
     
-    // Создаем элемент для координат
     createCoordsDisplay();
 
-    // Инициализируем структуры данных для слоёв
     initLayerDataStructures();
-    
-    // Загружаем выбранный слой
+
     loadCurrentLayer();
-    
-    // Инициализация карты
+
     initMap();
-    
-    // Инициализация слоёв
+
     initLayers();
     
-    // Добавление контролов на карту
     const mapSwitchControl = new MapSwitchControl();
     mapSwitchControl.addTo(map);
     
@@ -4125,31 +3757,26 @@ function initializeApp() {
     const specialMarksControl = new SpecialMarksControl();
     specialMarksControl.addTo(map);
     
-    // Загрузка меток
     setTimeout(() => {
         loadMarkersFromJSON();
         loadMarkedMarkers();
-        // Загружаем пользовательские метки
         setTimeout(() => {
             loadUserMarkers();
             cleanupGhostMarkedMarkers();
             
-            // Заполняем markersByFilter для текущего слоя
             populateMarkersByFilter();
             
-            // Настройка прокрутки
             setTimeout(() => {
                 enableFilterScroll();
                 enableSpecialMarksScroll();
                 enableToolsScroll();
                 
-                // Обновление состояний интерфейса
                 Object.keys(filterElements).forEach(filterName => {
                     updateFilterCheckboxState(filterName);
                 });
                 
                 Object.keys(subfilterElements).forEach(subfilterName => {
-                    const element = subfilterElements[subfilterName];
+                const element = subfilterElements[subfilterName];
                     if (element) {
                         if (subfilterStates[subfilterName]) {
                             element.checkmark.classList.add('active');
@@ -4177,11 +3804,8 @@ function initializeApp() {
 // ============================================
 // ДЕЛЕГИРОВАНИЕ СОБЫТИЙ ДЛЯ ЧЕКБОКСОВ В ТУЛТИПАХ
 // ============================================
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Используем делегирование событий для чекбоксов в тултипах
     document.addEventListener('click', function(e) {
-        // Проверяем, был ли клик по чекбоксу "Отмечено"
         const checkbox = e.target.closest('.tooltip-mark-checkbox');
         const label = e.target.closest('.tooltip-mark-label');
         
@@ -4190,20 +3814,16 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopImmediatePropagation();
             e.preventDefault();
             
-            // Находим ближайший тултип
             const tooltip = e.target.closest('.clicked-tooltip');
             if (!tooltip) return;
-            
-            // Находим маркер по data-marker-id
             const markerId = checkbox ? checkbox.getAttribute('data-marker-id') : 
-                           label ? label.getAttribute('data-marker-id') : null;
+                label ? label.getAttribute('data-marker-id') : null;
             
             if (!markerId) {
                 console.error('Не найден markerId');
                 return;
             }
             
-            // Находим маркер
             const markerInfo = findMarkerById(markerId);
             if (!markerInfo) {
                 console.error(`Маркер с ID ${markerId} не найден`);
@@ -4212,7 +3832,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const { marker, layer } = markerInfo;
             
-            // Проверяем, принадлежит ли маркер текущему слою
             if (layer !== currentLayer) {
                 console.warn(`Маркер ${markerId} принадлежит слою ${layer}, игнорируем клик`);
                 return;
@@ -4221,19 +3840,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const isCurrentlyMarked = markedMarkers[markerId] || false;
             const newState = !isCurrentlyMarked;
             
-            // Обновляем состояние
             markedMarkers[markerId] = newState;
             
-            // Обновляем состояние в слое
             if (!markedMarkersByLayer[layer]) {
                 markedMarkersByLayer[layer] = {};
-            }
+                }
             markedMarkersByLayer[layer][markerId] = newState;
             
-            // Обновляем внешний вид маркера
             updateMarkerAppearance(marker, newState);
             
-            // Обновляем чекбокс
             const checkboxElement = tooltip.querySelector('.tooltip-mark-checkbox');
             if (checkboxElement) {
                 if (newState) {
@@ -4245,7 +3860,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Сохраняем состояние
             saveMarkedMarkers();
             saveUserMarkers();
             
@@ -4253,7 +3867,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, true);
     
-    // Предотвращаем закрытие при клике на сам тултип
     document.addEventListener('click', function(e) {
         if (e.target.closest('.clicked-tooltip')) {
             e.stopPropagation();
@@ -4261,5 +3874,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
 });
 
-// Запуск приложения
 document.addEventListener('DOMContentLoaded', initializeApp);
