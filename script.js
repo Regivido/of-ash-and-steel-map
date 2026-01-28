@@ -18,7 +18,7 @@ let markersByFilter = {
     'Места для рыбалки': [],
     'НИП': [],
     'Обелиски': [],
-    'Опасные противники': [],
+    'Монстры': [],
     'Особые': [],
     'Пещеры': [],
     'Предметы': [],
@@ -36,7 +36,7 @@ let markersByFilter = {
 let subfilters = {
     'Бижутерия': ['Правые кольца', 'Левые кольца', 'Амулеты'],
     'НИП': ['Квестодатели', 'Торговцы', 'Учителя созидания', 'Учителя выживания', 'Учителя войны', 'Другие'],
-    'Опасные противники': ['Альфа', 'Квестовые монстры'],
+    'Монстры': ['Альфа', 'Квестовые монстры', 'Опасные противники'],
     'Особые': ['Головоломки', 'Квестовые вещи', 'Неизвестно'],
     'Ремесло': ['Алхимия', 'Верстаки', 'Заточка', 'Ковка', 'Плавильня', 'Укрепление', 'Шкуры', 'Ювелир'],
     'Рудные жилы': ['Железные', 'Золотые', 'Кристаллические', 'Угольные'],
@@ -77,7 +77,7 @@ const filtersConfig = [
     { name: 'Места для рыбалки', color: '#4CAF50', icon: 'assets/fishing.png', hasSubfilters: false },
     { name: 'НИП', color: '#4CAF50', icon: 'assets/npc.png', hasSubfilters: true },
     { name: 'Обелиски', color: '#4CAF50', icon: 'assets/obelisk.png', hasSubfilters: false },
-    { name: 'Опасные противники', color: '#4CAF50', icon: 'assets/monster.png', hasSubfilters: true },
+    { name: 'Монстры', color: '#4CAF50', icon: 'assets/monster.png', hasSubfilters: true },
     { name: 'Особые', color: '#4CAF50', icon: 'assets/unknown.png', hasSubfilters: true },
     { name: 'Пещеры', color: '#4CAF50', icon: 'assets/cave.png', hasSubfilters: false },
     { name: 'Предметы', color: '#4CAF50', icon: 'assets/item.png', hasSubfilters: false },
@@ -188,7 +188,7 @@ function initMarkerIcons() {
         'Места для рыбалки': 'assets/fishing.png',
         'НИП': 'assets/npc.png',
         'Обелиски': 'assets/obelisk.png',
-        'Опасные противники': 'assets/monster.png',
+        'Монстры': 'assets/monster.png',
         'Особые': 'assets/unknown.png',        
         'Пещеры': 'assets/cave.png',
         'Предметы': 'assets/item.png',
@@ -868,7 +868,7 @@ async function loadMarkersFromJSON() {
         'Алтари': [], 'Бижутерия': [], 'Жуки': [], 'Записки': [], 
         'Квестовые предметы': [], 'Ключи': [], 'Книги': [], 'Книги Древних': [],
         'Костры': [], 'Легендарное оружие': [], 'Места для отдыха': [], 'Места для рыбалки': [],
-        'НИП': [], 'Обелиски': [], 'Опасные противники': [], 'Пещеры': [],
+        'НИП': [], 'Обелиски': [], 'Монстры': [], 'Пещеры': [],
         'Предметы': [], 'Ремесло': [], 'Рецепты': [], 'Рудные жилы': [],
         'Сундуки': [], 'Телепорты': [], 'Точки исследования': [], 'Травы': [],
         'Характеристики': [], 'Хряк контрабандистов': [], 'Мои метки': []
@@ -922,7 +922,7 @@ function createMarkerFromJSON(data) {
         bubblingMouseEvents: false
     });
     
-        const markerId = data.ID || generateMarkerId(data);
+    const markerId = data.ID || generateMarkerId(data);
     marker.customId = markerId;
     marker.layer = markerLayer;     
     const popupContent = `
@@ -945,7 +945,6 @@ function createMarkerFromJSON(data) {
         Название: data.Название,
         ОсновныеФильтры: data.ОсновныеФильтры || [],
         Подфильтры: data.Подфильтры || [],
-        ВсеФильтрыВПорядке: buildAllFilters(data),
         X: data.X,
         Y: data.Y,
         Комментарий: data.Комментарий || '',
@@ -988,35 +987,6 @@ function createMarkerFromJSON(data) {
     }
     
     return marker;
-}
-
-/**
- * Строим массив "ВсеФильтрыВПорядке" из данных JSON
- */
-function buildAllFilters(data) {
-    const allFilters = [];
-    
-    if (data.Иконка && !allFilters.includes(data.Иконка)) {
-        allFilters.push(data.Иконка);
-    }
-    
-    if (data.ОсновныеФильтры) {
-        data.ОсновныеФильтры.forEach(filter => {
-            if (!allFilters.includes(filter)) {
-                allFilters.push(filter);
-            }
-        });
-    }
-    
-    if (data.Подфильтры) {
-        data.Подфильтры.forEach(subfilter => {
-            if (!allFilters.includes(subfilter)) {
-                allFilters.push(subfilter);
-            }
-        });
-    }
-    
-    return allFilters;
 }
 
 /**
@@ -1587,17 +1557,25 @@ function shouldMarkerBeVisible(marker) {
         return true;
     }
     
-    if (marker.mainFilters && marker.mainFilters.length > 0) {
+  if (marker.mainFilters && marker.mainFilters.length > 0) {
         for (const mainFilter of marker.mainFilters) {
             if (filterStates[mainFilter] === true) {
                 if (subfilters[mainFilter] && subfilters[mainFilter].length > 0) {
-            const hasVisibleSubfilter = marker.subfilters && 
+                    const markerHasSubfiltersForThisFilter = marker.subfilters && 
                         marker.subfilters.some(subfilter => 
+                            subfilters[mainFilter].includes(subfilter)
+                        );
+                    
+                    if (markerHasSubfiltersForThisFilter) {
+                        const hasVisibleSubfilter = marker.subfilters.some(subfilter => 
                             subfilters[mainFilter].includes(subfilter) && 
                             subfilterStates[subfilter] === true
                         );
-                    
-                    if (hasVisibleSubfilter) {
+                        
+                        if (hasVisibleSubfilter) {
+                            return true;
+                        }
+                    } else {
                         return true;
                     }
                 } else {
