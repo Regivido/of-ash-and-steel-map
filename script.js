@@ -108,7 +108,6 @@ const layersConfig = [
         name: 'Основной мир',
         imageUrl: 'assets/worldmap.webp',
         bounds: [[0, 0], [800, 800]],
-        icon: 'assets/worldmap-icon.png',
         minZoom: 0,
         maxZoom: 5,
         defaultZoom: 0
@@ -116,9 +115,8 @@ const layersConfig = [
     {
         id: 'greyshaft-city',
         name: 'Грейшафт-Сити',
-        imageUrl: 'assets/greyshaft-city.png',
+        imageUrl: 'assets/greyshaft-city.jpg',
         bounds: [[0, 0], [800, 800]],
-        icon: 'assets/greyshaft-icon.png',
         minZoom: 0,
         maxZoom: 3,
         defaultZoom: 0
